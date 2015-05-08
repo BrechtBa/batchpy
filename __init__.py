@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # batchPy
 # Documentation
 import os
@@ -9,26 +10,29 @@ class Batch():
 	
 		self.path = path
 		self.name = name
-		self.runs = []
-		self.result = []
+		self.run = []
+		self.res = []
 		self.currentrun = 0
 		
-	def add_run(self,run):
+	def add_run(self,run,res):
 		"""
 		Inputs:
-		run a callable object which runs whatever needs to be run and returns a dict with results to append to data
+		run a callable object which runs whatever needs to be run
+		res a link to a dict where the results of run are stored
+		
+		example:
+		batch.add_run(cal,cal.res)
 		"""
-		self.runs.append(run)
-		self.result.append({})
-		self.load(len(self.runs)-1)
+		
+		self.run.append(run)
+		self.res.append(res)
+		self.load(len(self.run)-1)
 		
 	def clear_run(self,run):
 		self.currentrun = run
-		if len(self.result) > run:
-			self.result[run] = {}
-			if 'result' in dir(self.runs[run]):
-				self.runs[run].result = {}
-	
+		if len(self.res) > run:
+			self.res[run].clear()
+
 	def save(self):
 		"""
 		saves the result and the currentrun index in a file in 'curent directory/data/name.pyz' 
@@ -36,7 +40,7 @@ class Batch():
 
 		filename = self._savepath()
 		
-		np.savez(filename,self.currentrun,self.result)
+		np.savez(filename,self.currentrun,self.res)
 		
 	def load(self,run):
 		"""
@@ -49,32 +53,39 @@ class Batch():
 		if os.path.isfile(filename):
 			temp = np.load(filename)
 			self.currentrun = temp['arr_0'].item()
-			result = temp['arr_1']
+			res = temp['arr_1']
 			
-			if len(result) > run:
-				self.result[run] = result[run]
-				if 'result' in dir(self.runs[run]):
-					self.runs[run].result = result[run]
+			if len(res) > run:
+				self.res[run].update(res[run])
 					
-			
-	
-	def __call__(self):
+	def __call__(self,run=-1):
 		"""
-		runs the remainder of the batch
+		runs the remainder of the batch or a specified run
 		"""
+		title_width = 60
 		
-		while self.currentrun < len(self.runs):
-			print('#####################################' )
-			print('###   run %s                       ###' % self.currentrun )
-			print('#####################################' )
+		if run >= 0:
+			if isinstance(run,list):
+				runs = run
+			else:
+				runs = [run]
+		else:
+			runs = range(self.currentrun, len(self.run))
+		
+		for i in runs:
+			print(title_width*'#')
+			print('###   run %s / %s  ' % (self.currentrun+1,len(self.run)) + (title_width-19-len(str(self.currentrun+1))-len(str(len(self.run))))*' ' +' ###' )
+			print(title_width*'#')
 			print(' ')
 			
-			run = self.runs[self.currentrun]
-			self.result[self.currentrun] = run()
-			self.currentrun += 1
+			runobj = self.run[i]
+			runobj()
+			if run >= 0:
+				self.currentrun = i+1
 			
 			self.save()
-	
+			print(' ')
+			
 	def _savepath(self):
 		dirname = os.path.join(self.path, '_data' )
 		filename = os.path.join(dirname , self.name +'.npz' )
