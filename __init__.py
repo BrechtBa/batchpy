@@ -64,23 +64,24 @@ class Batch():
 		"""
 		title_width = 60
 		
-		if run >= 0:
+		if run < 0:
+			runs = range(self.currentrun, len(self.run))
+		else:
 			if isinstance(run,list):
 				runs = run
 			else:
 				runs = [run]
-		else:
-			runs = range(self.currentrun, len(self.run))
+			
 		
 		for i in runs:
 			print(title_width*'#')
-			print('###   run %s / %s  ' % (self.currentrun+1,len(self.run)) + (title_width-19-len(str(self.currentrun+1))-len(str(len(self.run))))*' ' +' ###' )
+			print('###   run %s / %s  ' % (self.currentrun+1,len(runs)) + (title_width-19-len(str(self.currentrun+1))-len(str(len(runs))))*' ' +' ###' )
 			print(title_width*'#')
 			print(' ')
 			
 			runobj = self.run[i]
 			runobj()
-			if run >= 0:
+			if run < 0:
 				self.currentrun = i+1
 			
 			self.save()
