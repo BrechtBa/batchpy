@@ -35,7 +35,7 @@ class Batch():
 
 	def save(self):
 		"""
-		saves the result and the currentrun index in a file in 'curent directory/data/name.pyz' 
+		saves the result and the currentrun index in a file in 'curent directory/_res/name.pyz' 
 		"""
 
 		filename = self._savepath()
@@ -44,7 +44,7 @@ class Batch():
 		
 	def load(self,run):
 		"""
-		check is there is a file with the appropriate name in 'curent directory/data/name.pyz'
+		check is there is a file with the appropriate name in 'curent directory/_res/name.pyz'
 		and loads the data and currentrun index from it
 		"""
 
@@ -88,7 +88,7 @@ class Batch():
 			print(' ')
 			
 	def _savepath(self):
-		dirname = os.path.join(self.path, '_data' )
+		dirname = os.path.join(self.path, '_res' )
 		filename = os.path.join(dirname , self.name +'.npz' )
 		
 		if not os.path.isdir(dirname):
