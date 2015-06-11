@@ -18,11 +18,13 @@ class Batch():
 	def add_run(self,run,res='res'):
 		"""
 		Inputs:
-		run a callable object which runs whatever needs to be run
-		res a string to a results attribute of the run
+		run: a callable object which runs whatever needs to be run
+		res: a string to a results attribute of the run object
 		
 		example:
-		batch.add_run(cal,'res')
+		batch.add_run(cal,res='results')
+		batch()
+		# will run cal() and store cal.results in batch.res[0] after completion
 		"""
 		
 		self.run.append(run)
@@ -77,7 +79,7 @@ class Batch():
 		
 		for i in runs:
 			#print(title_width*'#')
-			title_str = '###   run %s / %s' % (self.currentrun+1,len(runs))
+			title_str = '###   run %s / %s' % (self.currentrun,len(runs))
 			
 			title_str = title_str + (title_width-len(title_str)-3)*' ' +'###'
 			
