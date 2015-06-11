@@ -4,6 +4,7 @@
 import os
 import numpy as np
 import itertools
+import time
 
 class Batch():
 
@@ -90,6 +91,7 @@ class Batch():
 			
 			if len(res) > run:
 				self.res[run].update(res[run])
+				
 	def get_res(self,key):
 		"""
 		returns a list of results for all res
@@ -113,12 +115,22 @@ class Batch():
 			else:
 				runs = [run]
 			
-		
+		starttime = time.time()
+		runcount = 0
 		for i in runs:
 			#print(title_width*'#')
-			title_str = '###   run %s / %s' % (self.currentrun,len(runs))
+			runtime = time.time()-starttime
+			if runcount==0:
+				etastr = '/'
+			else:
+				etastr = '%.1f min' % ( runtime/runcount*(len(runs)-runcount)/60 )
 			
-			title_str = title_str + (title_width-len(title_str)-3)*' ' +'###'
+			runcount += 1
+				
+			title_str = '###   run %s / %s' % (self.currentrun,len(runs))
+			title_str += '       runtime: %.1f min' % (runtime/60)
+			title_str += '       eta: '+etastr
+			title_str += (title_width-len(title_str)-3)*' ' +'###'
 			
 			print(title_str)
 			#print(title_width*'#')
