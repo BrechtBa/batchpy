@@ -11,21 +11,23 @@ class Batch():
 		self.path = path
 		self.name = name
 		self.run = []
+		self.resname = []
 		self.res = []
 		self.currentrun = 0
 		
-	def add_run(self,run,res):
+	def add_run(self,run,res='res'):
 		"""
 		Inputs:
 		run a callable object which runs whatever needs to be run
-		res a link to a dict where the results of run are stored
+		res a string to a results attribute of the run
 		
 		example:
-		batch.add_run(cal,cal.res)
+		batch.add_run(cal,'res')
 		"""
 		
 		self.run.append(run)
-		self.res.append(res)
+		self.resname.append(res)
+		self.res.append(getattr(self.run[-1],self.resname[-1]))
 		self.load(len(self.run)-1)
 		
 	def clear_run(self,run):
@@ -62,7 +64,7 @@ class Batch():
 		"""
 		runs the remainder of the batch or a specified run
 		"""
-		title_width = 60
+		title_width = 80
 		
 		if run < 0:
 			runs = range(self.currentrun, len(self.run))
@@ -74,13 +76,21 @@ class Batch():
 			
 		
 		for i in runs:
-			print(title_width*'#')
-			print('###   run %s / %s  ' % (self.currentrun+1,len(runs)) + (title_width-19-len(str(self.currentrun+1))-len(str(len(runs))))*' ' +' ###' )
-			print(title_width*'#')
+			#print(title_width*'#')
+			title_str = '###   run %s / %s' % (self.currentrun+1,len(runs))
+			
+			title_str = title_str + (title_width-len(title_str)-3)*' ' +'###'
+			
+			print(title_str)
+			#print(title_width*'#')
 			print(' ')
 			
 			runobj = self.run[i]
 			runobj()
+			
+			# update the res attribute
+			self.res[i] = getattr(self.run[i],self.resname[i])
+			
 			if run < 0:
 				self.currentrun = i+1
 			
