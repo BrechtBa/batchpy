@@ -90,7 +90,15 @@ class Batch():
 			
 			if len(res) > run:
 				self.res[run].update(res[run])
-					
+	def get_res(self,key):
+		"""
+		returns a list of results for all res
+		
+		Arguments:
+		key: a key in the res dict
+		"""
+		return [ res[key] for res in self.res]
+		
 	def __call__(self,run=-1):
 		"""
 		runs the remainder of the batch or a specified run
