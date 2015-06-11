@@ -3,6 +3,7 @@
 # Documentation
 import os
 import numpy as np
+import itertools
 
 class Batch():
 
@@ -17,11 +18,13 @@ class Batch():
 		
 	def add_run(self,run,res='res'):
 		"""
+		Adds a run
+		
 		Inputs:
 		run: a callable object which runs whatever needs to be run
 		res: a string to a results attribute of the run object
 		
-		example:
+		Example:
 		batch.add_run(cal,res='results')
 		batch()
 		# will run cal() and store cal.results in batch.res[0] after completion
@@ -31,6 +34,32 @@ class Batch():
 		self.resname.append(res)
 		self.res.append(getattr(self.run[-1],self.resname[-1]))
 		self.load(len(self.run)-1)
+		
+	def add_factorial_runs(self,runcreator,inputs,res='res'):
+		"""
+		Adds runs 
+		
+		Arguments:
+		runcreator: function which returns run objects given a set of input parameters
+		inputs: dict with input names and a list of values
+		res: a string to a results attribute of the run object
+		
+		Example:
+		batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]},res='results')
+		# is equivalent with:
+		batch.add_run(createcal(par1=0,par2=5.0),res='results')
+		batch.add_run(createcal(par1=1,par2=5.0),res='results')
+		batch.add_run(createcal(par1=2,par2=5.0),res='results')
+		batch.add_run(createcal(par1=0,par2=7.1),res='results')
+		batch.add_run(createcal(par1=1,par2=7.1),res='results')
+		batch.add_run(createcal(par1=2,par2=7.1),res='results')
+		"""
+		
+		valslist = list(itertools.product(*inputs.values()))
+		
+		for vals in valslist:
+			input = {key:val for key,val in zip(inputs.keys(),vals)}
+			self.add_run(runcreator(**input),res=res)
 		
 	def clear_run(self,run):
 		self.currentrun = run
