@@ -36,8 +36,9 @@ class Batch():
 		"""
 		
 		self.run.append(run)
-		self.resname.append(res)
-		self.res.append(multi_getattr(self.run[-1],self.resname[-1]))
+		#self.resname.append(res)
+		#self.res.append(multi_getattr(self.run[-1],self.resname[-1]))
+		self.res.append({})
 		self.parname.append(par)
 		self.par.append(multi_getattr(self.run[-1],self.parname[-1]))
 		self.rundone.append(False)
@@ -84,7 +85,7 @@ class Batch():
 
 		filename = self._savepath()
 		
-		np.savez(filename,self.rundone,self.res,self.resname,self.parname,self.par)
+		np.savez(filename,self.rundone,self.res,self.parname,self.par)
 		
 	def load(self,idx):
 		"""
@@ -98,12 +99,11 @@ class Batch():
 			temp = np.load(filename)
 			rundones = temp['arr_0']
 			ress = temp['arr_1']
-			resnames = temp['arr_2']
-			parnames = temp['arr_3']
-			pars = temp['arr_4']
+			parnames = temp['arr_2']
+			pars = temp['arr_3']
 			
-			for rundone,res,resname,parname,par in zip(rundones,ress,resnames,parnames,pars):
-				if resname == self.resname[idx] and parname == self.parname[idx]:
+			for rundone,res,parname,par in zip(rundones,ress,parnames,pars):
+				if parname == self.parname[idx]:
 					# if the parameter attributes of saved and created runs match update the run
 					if multi_getattr(self.run[idx],parname) == par:
 						self.rundone[idx] = rundone
@@ -160,19 +160,18 @@ class Batch():
 			
 			print(title_str)
 			#print(title_width*'#')
-			print(' ')
 			
 			runobj = self.run[idx]
-			runobj()
+			#runobj()
 			
 			# update the res attribute
-			self.res[idx] = multi_getattr(self.run[idx],self.resname[idx])
+			self.res[idx] = runobj() #multi_getattr(self.run[idx],self.resname[idx])
 			
 			# set the current run to done
 			self.rundone[idx] = True
 			
 			self.save()
-			print(' ')
+	
 			
 	def _savepath(self):
 		dirname = os.path.join(self.path, '_res' )
