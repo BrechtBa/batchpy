@@ -37,7 +37,8 @@ class Batch():
 		
 		self.run.append(run)
 		self.resname.append(res)
-		self.res.append(multi_getattr(self.run[-1],self.resname[-1]))
+		#self.res.append(multi_getattr(self.run[-1],self.resname[-1]))
+		self.res.append({})
 		self.parname.append(par)
 		self.par.append(multi_getattr(self.run[-1],self.parname[-1]))
 		self.rundone.append(False)
@@ -163,10 +164,10 @@ class Batch():
 			print(' ')
 			
 			runobj = self.run[idx]
-			runobj()
+			res = runobj()
 			
 			# update the res attribute
-			self.res[idx] = multi_getattr(self.run[idx],self.resname[idx])
+			self.res[idx] = res #multi_getattr(self.run[idx],self.resname[idx])
 			
 			# set the current run to done
 			self.rundone[idx] = True
