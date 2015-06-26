@@ -13,20 +13,17 @@ class Batch():
 		self.path = path
 		self.name = name
 		self.run = []
-		self.resname = []
 		self.res = []
-		self.parname = []
-		self.par = []
+		self.id = []
 		self.rundone = []
 		
-	def add_run(self,run,res='res',par='par'):
+	def add_run(self,run,id):
 		"""
 		Adds a run
 		
 		Inputs:
 		run: a callable object which runs whatever needs to be run
-		res: a string reference to a results dictionary of the run object
-		par: a string reference to a parameters dictionary of the run object used to identify the run
+		id:  a string used to identify the run best created as a hash from the run parameters
 		
 		Example:
 		batch.add_run(cal,res='results',par='temp.parameters')
@@ -36,11 +33,8 @@ class Batch():
 		"""
 		
 		self.run.append(run)
-		#self.resname.append(res)
-		#self.res.append(multi_getattr(self.run[-1],self.resname[-1]))
 		self.res.append({})
-		self.parname.append(par)
-		self.par.append(multi_getattr(self.run[-1],self.parname[-1]))
+		self.id.append(id)
 		self.rundone.append(False)
 		
 		# check if there are results for a run with this hash and load it if so
@@ -51,27 +45,28 @@ class Batch():
 		Adds runs 
 		
 		Arguments:
-		runcreator: function which returns run objects given a set of input parameters
+		runcreator: function which returns a run objects and an id given a set of input parameters
 		inputs: dict with input names and a list of values
 		res: a string reference to a results attribute of the run object
 		par: a string reference to a parameters attribute of the run object used to identify the run
 		
 		Example:
-		batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]},res='results')
+		batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]})
 		# is equivalent with:
-		batch.add_run(createcal(par1=0,par2=5.0),res='results')
-		batch.add_run(createcal(par1=1,par2=5.0),res='results')
-		batch.add_run(createcal(par1=2,par2=5.0),res='results')
-		batch.add_run(createcal(par1=0,par2=7.1),res='results')
-		batch.add_run(createcal(par1=1,par2=7.1),res='results')
-		batch.add_run(createcal(par1=2,par2=7.1),res='results')
+		batch.add_run(createcal(par1=0,par2=5.0))
+		batch.add_run(createcal(par1=1,par2=5.0))
+		batch.add_run(createcal(par1=2,par2=5.0))
+		batch.add_run(createcal(par1=0,par2=7.1))
+		batch.add_run(createcal(par1=1,par2=7.1))
+		batch.add_run(createcal(par1=2,par2=7.1))
 		"""
 		
 		valslist = list(itertools.product(*inputs.values()))
 		
 		for vals in valslist:
 			input = {key:val for key,val in zip(inputs.keys(),vals)}
-			self.add_run(runcreator(**input),res=res,par=par)
+			run,id = runcreator(**input)
+			self.add_run(run,id)
 		
 	def clear_run(self,run):
 		self.currentrun = run
@@ -85,7 +80,7 @@ class Batch():
 
 		filename = self._savepath()
 		
-		np.savez(filename,self.rundone,self.res,self.parname,self.par)
+		np.savez(filename,self.rundone,self.res,self.id)
 		
 	def load(self,idx):
 		"""
@@ -99,15 +94,12 @@ class Batch():
 			temp = np.load(filename)
 			rundones = temp['arr_0']
 			ress = temp['arr_1']
-			parnames = temp['arr_2']
-			pars = temp['arr_3']
-			
-			for rundone,res,parname,par in zip(rundones,ress,parnames,pars):
-				if parname == self.parname[idx]:
-					# if the parameter attributes of saved and created runs match update the run
-					if multi_getattr(self.run[idx],parname) == par:
-						self.rundone[idx] = rundone
-						self.res[idx].update(res)
+			ids = temp['arr_2']
+									
+			for rundone,res,id in zip(rundones,ress,ids):
+				if self.id[idx] == id:
+					self.rundone[idx] = rundone
+					self.res[idx].update(res)
 				
 	def get_res(self,key):
 		"""
