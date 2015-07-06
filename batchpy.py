@@ -17,6 +17,18 @@ class Batch():
 		self.id = []
 		self.rundone = []
 		
+		# check if there are results saved with the same name and load them
+		filename = self._savepath()
+		if os.path.isfile(filename):
+			temp = np.load(filename)
+			self._temprundone = temp['arr_0']
+			self._tempres = temp['arr_1']
+			self._tempid = temp['arr_2']
+		else:
+			self._temprundone = []
+			self._tempres = []
+			self._tempid = []
+		
 	def add_run(self,run,id):
 		"""
 		Adds a run
@@ -87,19 +99,11 @@ class Batch():
 		check is there is a file with the appropriate name in 'curent directory/_res/name.pyz'
 		and loads the data and currentrun index from it
 		"""
-
-		filename = self._savepath()
-		
-		if os.path.isfile(filename):
-			temp = np.load(filename)
-			rundones = temp['arr_0']
-			ress = temp['arr_1']
-			ids = temp['arr_2']
-									
-			for rundone,res,id in zip(rundones,ress,ids):
-				if self.id[idx] == id:
-					self.rundone[idx] = rundone
-					self.res[idx].update(res)
+						
+		for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
+			if self.id[idx] == id:
+				self.rundone[idx] = rundone
+				self.res[idx].update(res)
 				
 	def get_res(self,key):
 		"""
