@@ -17,6 +17,8 @@ class Batch():
 		self.id = []
 		self.rundone = []
 		
+		self.saveeveryrun = True
+		
 		# check if there are results saved with the same name and load them
 		filename = self._savepath()
 		if os.path.isfile(filename):
@@ -166,8 +168,11 @@ class Batch():
 			# set the current run to done
 			self.rundone[idx] = True
 			
+			if self.saveeveryrun:
+				self.save()
+		
+		if not self.saveeveryrun:
 			self.save()
-	
 			
 	def _savepath(self):
 		dirname = os.path.join(self.path, '_res' )
