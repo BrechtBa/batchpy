@@ -139,34 +139,34 @@ class Batch():
 			
 			
 		starttime = time.time()
-		runcount = 0
-		for idx in runs:
-			#print(title_width*'#')
-			runtime = time.time()-starttime
-			if runcount==0:
-				etastr = '/'
-			else:
-				etastr = '%.1f min' % ( runtime/runcount*(len(runs)-runcount)/60 )
+		for i,run in enumerate(runs):
 			
-			runcount += 1
-				
-			title_str = '###   run %s in ' % (idx)
-			title_str += strlist(runs)
-			title_str += '       runtime: %.1f min' % (runtime/60)
-			title_str += '       eta: '+etastr
-			title_str += (title_width-len(title_str)-3)*' ' +'###'
+			# print the run title string
+			if len(runs)<50 or i%10==0:
+				runtime = time.time()-starttime
+				if i==0:
+					etastr = '/'
+				else:
+					etastr = '{0:.1f} min'.format( runtime/i*(len(runs)-i)/60 )
+					
+				title_str = '### run {0} in '.format(run)
+				title_str += strlist(runs)
+				title_str += (40-len(title_str))*' '
+				title_str += 'runtime: {0:.1f} min'.format(runtime/60)
+				title_str += 4*' '
+				title_str += 'eta: '+etastr
+				title_str += (title_width-len(title_str)-3)*' ' +'###'
+				print(title_str)
 			
-			print(title_str)
-			#print(title_width*'#')
+
 			
-			runobj = self.run[idx]
-			#runobj()
+			runobj = self.run[run]
 			
 			# update the res attribute
-			self.res[idx] = runobj() #multi_getattr(self.run[idx],self.resname[idx])
+			self.res[run] = runobj()
 			
 			# set the current run to done
-			self.rundone[idx] = True
+			self.rundone[run] = True
 			
 			if self.saveeveryrun:
 				self.save()
@@ -186,34 +186,8 @@ class Batch():
 		
 		
 # helper functions
-def multi_getattr(obj, attr, default = None):
-	"""
-	Get a named attribute from an object; multi_getattr(x, 'a.b.c.d') is
-	equivalent to x.a.b.c.d. When a default argument is given, it is
-	returned when any attribute in the chain doesn't exist; without
-	it, an exception is raised when a missing attribute is encountered.
-
-	Example:
-	obj  = [1,2,3]
-	attr = "append.__doc__.capitalize.__doc__"
-
-	multi_getattr(obj, attr) #Will return the docstring for the
-							 #capitalize method of the builtin string
-							 #object
-	"""
-	attributes = attr.split(".")
-	for i in attributes:
-		try:
-			obj = getattr(obj, i)
-		except AttributeError:
-			if default:
-				return default
-			else:
-				raise
-	return obj
-        
 def strlist(runs):
 	if len(runs) > 5:
-		return '[' + str(runs[0]) + ',' + str(runs[1]) + '...' + str(runs[-2]) + ',' + str(runs[-1]) +']'
+		return '[' + str(runs[0]) + ',' + str(runs[1]) + ',...,' + str(runs[-2]) + ',' + str(runs[-1]) +']'
 	else:
 		return str(runs)
