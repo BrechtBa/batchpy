@@ -98,8 +98,7 @@ class Batch():
 		
 	def load(self,idx):
 		"""
-		check is there is a file with the appropriate name in 'curent directory/_res/name.pyz'
-		and loads the data and currentrun index from it
+		check if the idx is in the loaded id's and assign the results if so
 		"""
 						
 		for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
@@ -173,7 +172,7 @@ class Batch():
 			if self.saveeveryrun:
 				self.save()
 		
-		if not self.saveeveryrun:
+		if not self.saveeveryrun and len(runs)>0:
 			self.save()
 			
 		print('done')
