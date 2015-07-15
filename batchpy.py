@@ -8,10 +8,11 @@ import time
 
 class Batch():
 
-	def __init__(self,path,name):
+	def __init__(self,name,path=''):
 	
-		self.path = path
 		self.name = name
+		self.path = path
+		
 		self.run = []
 		self.res = []
 		self.id = []
@@ -31,24 +32,30 @@ class Batch():
 			self._tempres = []
 			self._tempid = []
 		
-	def add_run(self,run,id):
+	def add_run(self,run,id=None):
 		"""
 		Adds a run
 		
 		Inputs:
-		run: a callable object which runs whatever needs to be run
-		id:  a string used to identify the run best created as a hash from the run parameters
-		
+		run: a callable object which runs whatever needs to be run and can have an attribute id when no id attribute is present the index will be the id
+
 		Example:
-		batch.add_run(cal,res='results',par='temp.parameters')
+		batch.add_run(cal)
 		batch()
 		# will run cal() and store cal.results in batch.res[0] after completion
-		# parameters in cal.temp.parameters will be taken to define the run
+		# the run will be assigned an id according to cal.id
 		"""
 		
 		self.run.append(run)
 		self.res.append({})
-		self.id.append(id)
+		if id == None:
+			if hasattr(run, 'id'):
+				self.id.append(run.id)
+			else:
+				self.id.append( len(self.id) )
+		else:
+			print('use of separate id argument is depreciated, include the id as an attribute of the run')
+			self.id.append(id)
 		self.rundone.append(False)
 		
 		# check if there are results for a run with this hash and load it if so
