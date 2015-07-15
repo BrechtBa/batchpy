@@ -136,13 +136,15 @@ class Batch():
 			else:
 				if not self.rundone[run]:
 					runs.append(run)
-			
+		
+
+		skip = int( np.ceil( len(runs)/50. ) )
 			
 		starttime = time.time()
 		for i,run in enumerate(runs):
 			
 			# print the run title string
-			if len(runs)<50 or i%10==0:
+			if i%skip==0:
 				runtime = time.time()-starttime
 				if i==0:
 					etastr = '/'
@@ -174,6 +176,8 @@ class Batch():
 		if not self.saveeveryrun:
 			self.save()
 			
+		print('done')
+		
 	def _savepath(self):
 		dirname = os.path.join(self.path, '_res' )
 		filename = os.path.join(dirname , self.name +'.npz' )
