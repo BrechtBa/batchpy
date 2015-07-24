@@ -1,1 +1,1 @@
-from batchpy import *
+from batchpy.batchpy import *
