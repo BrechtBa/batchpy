@@ -42,7 +42,7 @@ class Batch():
 		Example:
 		batch.add_run(cal)
 		batch()
-		# will run cal() and store cal.results in batch.res[0] after completion
+		# will run cal() and store the return of cal() in batch.res[] after completion
 		# the run will be assigned an id according to cal.id
 		"""
 		
@@ -181,7 +181,9 @@ class Batch():
 		
 		if not self.saveeveryrun and len(runs)>0:
 			self.save()
-			
+		
+		runtime = time.time()-starttime
+		print('total runtime {0:.1f} min'.format(runtime/60))
 		print('done')
 		
 	def _savepath(self):
