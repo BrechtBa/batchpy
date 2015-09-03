@@ -5,6 +5,8 @@ import os
 import numpy as np
 import itertools
 import time
+import hashlib
+import types
 
 class Batch():
 
@@ -107,7 +109,7 @@ class Batch():
 		"""
 		check if the idx is in the loaded id's and assign the results if so
 		"""
-						
+		
 		for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
 			if self.id[idx] == id:
 				self.rundone[idx] = rundone
@@ -195,7 +197,26 @@ class Batch():
 			
 		return filename
 		
+class Run():
+	def set_id(self,d):
+		"""
+		function creates an id hash from a dictionary
+		Arguments:
 		
+		"""
+		# remove the self object from the dictionary
+		id_dict = dict(d)
+		if 'self' in id_dict:
+			del id_dict['self']
+		
+		# replace all classes with their name as they are redefined on each startup
+		for key in id_dict.keys():
+			if isinstance(id_dict[key],types.ClassType):
+				id_dict[key] = id_dict[key].__name__
+				
+		
+		self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+		self.id_dict = id_dict
 		
 # helper functions
 def strlist(runs):
