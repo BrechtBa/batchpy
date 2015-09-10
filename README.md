@@ -15,11 +15,10 @@ import batchpy
 ```
 
 Define a run class to create objects which when called run the required calculations and return a result dictionary.
-It is best to assign a unique string id attribute in each run. This id can be created using a hash of a selection of parameters as strings using "hashlib":
+It is best to assign a unique string id attribute in each run. This id can be created by batchpy as a hash of some variables:
 ```
-import hashlib
 
-class Run:
+class Run(batchpy.Run):
 	def __init__(self,parameter_A,parameter_B=None,parameter_C=[1,2,3],parameter_D={'A':1,'B':None},parameter_E='test'):
 		"""
 		creates a run instance with all parameters required for the calculations
@@ -29,7 +28,7 @@ class Run:
 		all parameters you need
 		"""
 		
-		self.id = hashlib.sha1(str([parameter_A,parameter_C,parameter_D,parameter_E])).hexdigest()
+		self.set_id( locals() )
 		
 		self.parameter_A = parameter_A
 		self.parameter_B = parameter_B

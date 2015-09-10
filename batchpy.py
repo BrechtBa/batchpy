@@ -88,8 +88,8 @@ class Batch():
 		
 		for vals in valslist:
 			input = {key:val for key,val in zip(inputs.keys(),vals)}
-			run,id = runcreator(**input)
-			self.add_run(run,id)
+			run = runcreator(**input)
+			self.add_run(run)
 		
 	def clear_run(self,run):
 		self.currentrun = run
