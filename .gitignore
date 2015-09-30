@@ -1,1 +1,3 @@
 *.pyc
+batchpy.egg-info
+build

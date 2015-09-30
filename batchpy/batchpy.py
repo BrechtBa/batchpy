@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# batchPy
-# Documentation
+#!/usr/bin/python
 import os
 import numpy as np
 import itertools
