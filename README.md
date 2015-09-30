@@ -6,7 +6,7 @@ The example below should explain the workflow
 ## Installation
 requires `numpy`
 
-To install download the source distribution, unpack, cd to the unpacked folder and run:
+To install download the latest [release](https://github.com/BrechtBa/batchpy/releases), unpack, cd to the unpacked folder and run:
 ```
 python setup.py install
 ```
