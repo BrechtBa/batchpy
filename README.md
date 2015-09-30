@@ -3,9 +3,13 @@ A package to run large or small batches of similar calculations and storing the 
 
 The example below should explain the workflow
 
-### Dependencies
+## Installation
 requires `numpy`
 
+To install download the source distribution, unpack, cd to the unpacked folder and run:
+```
+python setup.py install
+```
 
 ## Example
 
