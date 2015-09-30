@@ -74,7 +74,7 @@ for i in range(5):
 
 Or from a full factorial design:
 ```
-batch.add_factorial_run(Run,{'parameter_A':'temp_parameter_A',
+batch.add_factorial_run(Run,{'parameter_A':['temp_parameter_A'],
 							 'parameter_C':[[4,5,6],[7,8,9]],
 							 'parameter_E': ['E1','E2','E3']})
 ```
