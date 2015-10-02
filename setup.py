@@ -10,4 +10,5 @@ setup(
 	author_email='brecht.baeten@gmail.com',
 	packages=find_packages(),
 	install_requires=['numpy'],
+	classifiers = ['Programming Language :: Python :: 2.7'],
 )
