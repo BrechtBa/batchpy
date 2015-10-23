@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import re
 import numpy as np
 import itertools
 import time
@@ -8,7 +9,7 @@ import types
 
 class Batch():
 
-	def __init__(self,name,path=''):
+	def __init__(self,name,path='',saverunsseparately=False,saveeveryrun=True):
 	
 		self.name = name
 		self.path = path
@@ -18,19 +19,24 @@ class Batch():
 		self.id = []
 		self.rundone = []
 		
-		self.saveeveryrun = True
+		self.saverunsseparately = saverunsseparately
+		if self.saverunsseparately:
+			self.saveeveryrun = True
+		else:
+			self.saveeveryrun = saveeveryrun
 		
 		# check if there are results saved with the same name and load them
-		filename = self._savepath()
-		if os.path.isfile(filename):
-			temp = np.load(filename)
-			self._temprundone = temp['arr_0']
-			self._tempres = temp['arr_1']
-			self._tempid = temp['arr_2']
-		else:
-			self._temprundone = []
-			self._tempres = []
-			self._tempid = []
+		self._temprundone = []
+		self._tempres = []
+		self._tempid = []
+		
+		filenames = self._get_filenames()
+		for filename in filenames:
+			data = np.load(filename)
+			for rundone,res,id in zip(data['rundone'],data['res'],data['id']):
+				self._temprundone.append(rundone)
+				self._tempres.append(res)
+				self._tempid.append(id)
 		
 	def add_run(self,run,id=None):
 		"""
@@ -94,14 +100,19 @@ class Batch():
 		if len(self.res) > run:
 			self.res[run].clear()
 
-	def save(self):
+	def save(self,run=None):
 		"""
-		saves the result and the currentrun index in a file in 'curent directory/_res/name.pyz' 
+		saves the result and the current run index in a file in 'current directory/_res/name.pyz' 
 		"""
 
-		filename = self._savepath()
-		
-		np.savez(filename,self.rundone,self.res,self.id)
+		dirname = self._savepath()
+		if self.saverunsseparately:
+			index = self.id.index(run.id)
+			filename = os.path.join(dirname , self.name + '_run{}.npz'.format(index))
+			np.savez(filename,rundone=[self.rundone[index]],res=[self.res[index]],id=[self.id[index]])
+		else:
+			filename = os.path.join(dirname , self.name + '.npz')
+			np.savez(filename,rundone=self.rundone,res=self.res,id=self.id)
 		
 	def load(self,idx):
 		"""
@@ -112,7 +123,7 @@ class Batch():
 			if self.id[idx] == id:
 				self.rundone[idx] = rundone
 				self.res[idx].update(res)
-				
+			
 	def get_res(self,key):
 		"""
 		returns a list of results for all res
@@ -177,7 +188,7 @@ class Batch():
 			self.rundone[run] = True
 			
 			if self.saveeveryrun:
-				self.save()
+				self.save(runobj)
 		
 		if not self.saveeveryrun and len(runs)>0:
 			self.save()
@@ -187,20 +198,42 @@ class Batch():
 		print('done')
 		
 	def _savepath(self):
+		"""
+		Returns the pathe where files are saved
+		"""
 		dirname = os.path.join(self.path, '_res' )
-		filename = os.path.join(dirname , self.name +'.npz' )
+		filename = os.path.join(dirname , self.name )
 		
 		if not os.path.isdir(dirname):
 			os.makedirs(dirname)
-			
-		return filename
 		
+		return dirname
+	
+	def _get_filenames(self):
+		"""
+		Returns a list of found files which should be loaded
+		"""
+		
+		dirname = self._savepath()
+		filenames = []
+		if self.saverunsseparately:
+			files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npz', f)]
+			for f in files:
+				filenames.append( os.path.join(dirname , f) )
+		else:
+			filename = os.path.join(dirname , self.name + '.npz')
+			if os.path.isfile(filename):
+				filenames.append(filename)
+				
+		return filenames
+	
+	
 class Run():
 	def set_id(self,d):
 		"""
 		function creates an id hash from a dictionary
 		Arguments:
-		
+		d:         dictionary
 		"""
 		# remove the self object from the dictionary
 		id_dict = dict(d)
