@@ -9,7 +9,7 @@ import types
 
 class Batch():
 
-	def __init__(self,name,path='',saverunsseparately=False,saveeveryrun=True):
+	def __init__(self,name,path='',saveresult=True,saverunsseparately=False,saveeveryrun=True):
 	
 		self.name = name
 		self.path = path
@@ -19,6 +19,7 @@ class Batch():
 		self.id = []
 		self.rundone = []
 		
+		self.saveresult = saveresult
 		self.saverunsseparately = saverunsseparately
 		if self.saverunsseparately:
 			self.saveeveryrun = True
@@ -33,6 +34,12 @@ class Batch():
 		filenames = self._get_filenames()
 		for filename in filenames:
 			data = np.load(filename)
+			
+			#	conversion between old and new format co keep compatibility
+			if 'arr_0' in data:
+				np.savez(filename,rundone=data['arr_0'],res=data['arr_1'],id=data['arr_2'])
+				data = np.load(filename)
+				
 			for rundone,res,id in zip(data['rundone'],data['res'],data['id']):
 				self._temprundone.append(rundone)
 				self._tempres.append(res)
@@ -102,17 +109,18 @@ class Batch():
 
 	def save(self,run=None):
 		"""
-		saves the result and the current run index in a file in 'current directory/_res/name.pyz' 
+		saves the result and the current run index in a file in 'current directory/_res/name.pyz' or 'current directory/_res/name_run_"id".pyz'
 		"""
-
-		dirname = self._savepath()
-		if self.saverunsseparately:
-			index = self.id.index(run.id)
-			filename = os.path.join(dirname , self.name + '_run{}.npz'.format(index))
-			np.savez(filename,rundone=[self.rundone[index]],res=[self.res[index]],id=[self.id[index]])
-		else:
-			filename = os.path.join(dirname , self.name + '.npz')
-			np.savez(filename,rundone=self.rundone,res=self.res,id=self.id)
+		
+		if self.saveresult:
+			dirname = self._savepath()
+			if self.saverunsseparately:
+				index = self.id.index(run.id)
+				filename = os.path.join(dirname , self.name + '_run{}.npz'.format(index))
+				np.savez(filename,rundone=[self.rundone[index]],res=[self.res[index]],id=[self.id[index]])
+			else:
+				filename = os.path.join(dirname , self.name + '.npz')
+				np.savez(filename,rundone=self.rundone,res=self.res,id=self.id)
 		
 	def load(self,idx):
 		"""
