@@ -7,7 +7,7 @@ import time
 import hashlib
 import types
 
-class Batch():
+class Batch(object):
 
 	def __init__(self,name,path='',saveresult=True,saverunsseparately=False,saveeveryrun=True):
 	
@@ -15,7 +15,6 @@ class Batch():
 		self.path = path
 		
 		self.run = []
-		self.res = []
 		self.id = []
 		self.rundone = []
 		
@@ -60,7 +59,6 @@ class Batch():
 		"""
 		
 		self.run.append(run)
-		self.res.append({})
 		if id == None:
 			if hasattr(run, 'id'):
 				self.id.append(run.id)
@@ -74,15 +72,13 @@ class Batch():
 		# check if there are results for a run with this hash and load it if so
 		self.load(len(self.run)-1)
 		
-	def add_factorial_runs(self,runcreator,inputs,res='res',par='par'):
+	def add_factorial_runs(self,runcreator,inputs):
 		"""
 		Adds runs 
 		
 		Arguments:
-		runcreator: function which returns a run objects and an id given a set of input parameters
+		runcreator: function which returns a run object given a set of input parameters
 		inputs: dict with input names and a list of values
-		res: a string reference to a results attribute of the run object
-		par: a string reference to a parameters attribute of the run object used to identify the run
 		
 		Example:
 		batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]})
@@ -101,11 +97,6 @@ class Batch():
 			input = {key:val for key,val in zip(inputs.keys(),vals)}
 			run = runcreator(**input)
 			self.add_run(run)
-		
-	def clear_run(self,run):
-		self.currentrun = run
-		if len(self.res) > run:
-			self.res[run].clear()
 
 	def save(self,run=None):
 		"""
@@ -117,10 +108,10 @@ class Batch():
 			if self.saverunsseparately:
 				index = self.id.index(run.id)
 				filename = os.path.join(dirname , self.name + '_run{}.npz'.format(index))
-				np.savez(filename,rundone=[self.rundone[index]],res=[self.res[index]],id=[self.id[index]])
+				np.savez(filename,rundone=[self.rundone[index]],res=[self.run[index].res],id=[self.id[index]])
 			else:
 				filename = os.path.join(dirname , self.name + '.npz')
-				np.savez(filename,rundone=self.rundone,res=self.res,id=self.id)
+				np.savez(filename,rundone=self.rundone,res=[run.res for run in self.run],id=self.id)
 		
 	def load(self,idx):
 		"""
@@ -130,7 +121,7 @@ class Batch():
 		for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
 			if self.id[idx] == id:
 				self.rundone[idx] = rundone
-				self.res[idx].update(res)
+				self.run[idx].res.update(res)
 			
 	def get_res(self,key):
 		"""
@@ -139,7 +130,7 @@ class Batch():
 		Arguments:
 		key: a key in the res dict
 		"""
-		return [ res[key] for res in self.res]
+		return [ run.res[key] for run in self.run]
 		
 	def __call__(self,run=-1):
 		"""
@@ -190,7 +181,7 @@ class Batch():
 			runobj = self.run[run]
 			
 			# update the res attribute
-			self.res[run] = runobj()
+			self.run[run].res = runobj()
 			
 			# set the current run to done
 			self.rundone[run] = True
@@ -236,7 +227,12 @@ class Batch():
 		return filenames
 	
 	
-class Run():
+class Run(object):
+	def __init__(self):
+		self.res = {}
+		self.id_dict = {}
+		self.id = ''
+		
 	def set_id(self,d):
 		"""
 		function creates an id hash from a dictionary
