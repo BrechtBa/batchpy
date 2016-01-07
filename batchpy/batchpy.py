@@ -9,7 +9,7 @@ import types
 
 class Batch(object):
 
-	def __init__(self,name,path='',saveresult=True,saverunsseparately=False,saveeveryrun=True):
+	def __init__(self,name,path='',saveresult=True,saverunsseparately=False,saveeveryrun=True,removerunsfrommemory=False):
 	
 		self.name = name
 		self.path = path
@@ -24,8 +24,18 @@ class Batch(object):
 			self.saveeveryrun = True
 		else:
 			self.saveeveryrun = saveeveryrun
+
+		self.removerunsfrommemory = removerunsfrommemory
 		
-		# check if there are results saved with the same name and load them
+		if not self.saveeveryrun and self.removerunsfrommemory:
+			print('Warning: setting removerunsfrommemory to True while saveeveryrun is False will result in not saving any data!')
+			
+		self.check_saved_runs()
+		
+	def check_saved_runs(self):
+		"""
+		checks if there are runs with saved with the same name and load them into a temporary set of runs
+		"""
 		self._temprundone = []
 		self._tempres = []
 		self._tempid = []
@@ -34,7 +44,7 @@ class Batch(object):
 		for filename in filenames:
 			data = np.load(filename)
 			
-			#	conversion between old and new format co keep compatibility
+			#	conversion between old and new format to keep compatibility
 			if 'arr_0' in data:
 				np.savez(filename,rundone=data['arr_0'],res=data['arr_1'],id=data['arr_2'])
 				data = np.load(filename)
@@ -97,7 +107,23 @@ class Batch(object):
 			input = {key:val for key,val in zip(inputs.keys(),vals)}
 			run = runcreator(**input)
 			self.add_run(run)
-
+	
+	def get_saved_runs(self):
+		"""
+		adds all previously saved runs to the current batch
+		this removes the present runs
+		"""
+		
+		self.run = []
+		self.id = []
+		self.rundone = []
+		
+		self.check_saved_runs()
+		self.id = self._tempid
+		
+		for idx in range(len(self.id)):
+			self.load(idx)
+		
 	def save(self,run=None):
 		"""
 		saves the result and the current run index in a file in 'current directory/_res/name.pyz' or 'current directory/_res/name_run_"id".pyz'
@@ -138,22 +164,31 @@ class Batch(object):
 		"""
 		title_width = 80
 		
-		#check which runs are to be done
+		# clear temp runs to save memory
+		self._temprundone = []
+		self._tempres = []
+		self._tempid = []
+		
+		
+		# check which runs are to be done
 		runs = []
 		if run < 0:
 			for idx in range(len(self.run)):
 				if not self.rundone[idx]:
-					runs.append(idx)
+					runs.append(idx)	
+					
 		else:
 			if isinstance(run,list):
 				for idx in run:
 					if not self.rundone[idx]:
 						runs.append(idx)
+
 			else:
 				if not self.rundone[run]:
 					runs.append(run)
+				
+				
 		
-
 		skip = int( np.ceil( len(runs)/50. ) )
 			
 		starttime = time.time()
@@ -188,6 +223,10 @@ class Batch(object):
 			
 			if self.saveeveryrun:
 				self.save(runobj)
+				
+			# delete run from memory to save memory
+			if self.removerunsfrommemory:
+				self.run[run] = None
 		
 		if not self.saveeveryrun and len(runs)>0:
 			self.save()
