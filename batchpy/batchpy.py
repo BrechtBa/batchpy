@@ -25,7 +25,12 @@ class Batch(object):
 		else:
 			self.saveeveryrun = saveeveryrun
 		
-		# check if there are results saved with the same name and load them
+		self.check_saved_runs()
+		
+	def check_saved_runs(self):
+		"""
+		checks if there are runs with saved with the same name and load them into a temporary set of runs
+		"""
 		self._temprundone = []
 		self._tempres = []
 		self._tempid = []
@@ -34,7 +39,7 @@ class Batch(object):
 		for filename in filenames:
 			data = np.load(filename)
 			
-			#	conversion between old and new format co keep compatibility
+			#	conversion between old and new format to keep compatibility
 			if 'arr_0' in data:
 				np.savez(filename,rundone=data['arr_0'],res=data['arr_1'],id=data['arr_2'])
 				data = np.load(filename)
