@@ -38,11 +38,17 @@ class Batch(object):
 		filenames = self._get_filenames()
 		for filename in filenames:
 			data = np.load(filename)
-			
-			#	conversion between old and new format to keep compatibility
-			if 'arr_0' in data:
-				np.savez(filename,rundone=data['arr_0'],res=data['arr_1'],id=data['arr_2'])
-				data = np.load(filename)
+			try:
+				data = data.item()	
+			except:
+				# conversion between very old and new format to keep compatibility
+				print('Warning: the data was in an old data format and will be converted to the new format. This may take some time and leave unused files.')
+				if 'arr_0' in data:
+					data = {'rundone':data['arr_0'],'res':data['arr_1'],'id':data['arr_2']}
+				else:
+					data = {'rundone':data['rundone'],'res':data['res'],'id':data['id']}
+					
+				np.save(filename,data)
 				
 			for rundone,res,id in zip(data['rundone'],data['res'],data['id']):
 				self._temprundone.append(rundone)
@@ -112,11 +118,11 @@ class Batch(object):
 			dirname = self._savepath()
 			if self.saverunsseparately:
 				index = self.id.index(run.id)
-				filename = os.path.join(dirname , self.name + '_run{}.npz'.format(index))
-				np.savez(filename,rundone=[self.rundone[index]],res=[self.run[index].res],id=[self.id[index]])
+				filename = os.path.join(dirname , self.name + '_run{}'.format(index))
+				np.save(filename,{'rundone':[self.rundone[index]],'res':[self.run[index].res],'id':[self.id[index]]})
 			else:
-				filename = os.path.join(dirname , self.name + '.npz')
-				np.savez(filename,rundone=self.rundone,res=[run.res for run in self.run],id=self.id)
+				filename = os.path.join(dirname , self.name)
+				np.save(filename,{'rundone':self.rundone,'res':[run.res for run in self.run],'id':self.id})
 		
 	def load(self,idx):
 		"""
@@ -221,11 +227,11 @@ class Batch(object):
 		dirname = self._savepath()
 		filenames = []
 		if self.saverunsseparately:
-			files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npz', f)]
+			files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npy', f)]
 			for f in files:
 				filenames.append( os.path.join(dirname , f) )
 		else:
-			filename = os.path.join(dirname , self.name + '.npz')
+			filename = os.path.join(dirname , self.name + '.npy')
 			if os.path.isfile(filename):
 				filenames.append(filename)
 				
