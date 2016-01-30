@@ -9,81 +9,35 @@ import types
 
 class Batch(object):
 
-	def __init__(self,name,path='',saveresult=True,saverunsseparately=False,saveeveryrun=True):
+	def __init__(self,name,path=''):
 	
 		self.name = name
 		self.path = path
 		
-		self.run = []
-		self.id = []
-		self.rundone = []
+		self._run = []
+		self._rundone = []
+		#self.id = []
 		
-		self.saveresult = saveresult
-		self.saverunsseparately = saverunsseparately
-		if self.saverunsseparately:
-			self.saveeveryrun = True
-		else:
-			self.saveeveryrun = saveeveryrun
 		
-		self.check_saved_runs()
-		
-	def check_saved_runs(self):
-		"""
-		checks if there are runs with saved with the same name and load them into a temporary set of runs
-		"""
-		self._temprundone = []
-		self._tempres = []
-		self._tempid = []
-		
-		filenames = self._get_filenames()
-		for filename in filenames:
-			data = np.load(filename)
-			try:
-				data = data.item()	
-			except:
-				# conversion between very old and new format to keep compatibility
-				print('Warning: the data was in an old data format and will be converted to the new format. This may take some time and leave unused files.')
-				if 'arr_0' in data:
-					data = {'rundone':data['arr_0'],'res':data['arr_1'],'id':data['arr_2']}
-				else:
-					data = {'rundone':data['rundone'],'res':data['res'],'id':data['id']}
-					
-				np.save(filename,data)
-				
-			for rundone,res,id in zip(data['rundone'],data['res'],data['id']):
-				self._temprundone.append(rundone)
-				self._tempres.append(res)
-				self._tempid.append(id)
-		
-	def add_run(self,run,id=None):
+	def add_run(self,runclass,parameters):
 		"""
 		Adds a run
 		
 		Inputs:
-		run: a callable object which runs whatever needs to be run and can have an attribute id when no id attribute is present the index will be the id
-
+		runclass: a class reference which creates an object when supplied the parameters
+		parameters: a dictionary of parameters to be supplied to the init function of the runclass
+		
 		Example:
-		batch.add_run(cal)
+		batch.add_run(Cal,{'A':1,'B':[1,2,3],'C':'spam'})
 		batch()
 		# will run cal() and store the return of cal() in batch.res[] after completion
 		# the run will be assigned an id according to cal.id
 		"""
 		
-		self.run.append(run)
-		if id == None:
-			if hasattr(run, 'id'):
-				self.id.append(run.id)
-			else:
-				self.id.append( len(self.id) )
-		else:
-			print('use of separate id argument is depreciated, include the id as an attribute of the run')
-			self.id.append(id)
-		self.rundone.append(False)
+		self._run.append({'runclass':runclass,'parameters':parameters})
+		self._rundone.append(False)
 		
-		# check if there are results for a run with this hash and load it if so
-		self.load(len(self.run)-1)
-		
-	def add_factorial_runs(self,runcreator,inputs):
+	def add_factorial_runs(self,runclass,parameters):
 		"""
 		Adds runs 
 		
@@ -102,48 +56,47 @@ class Batch(object):
 		batch.add_run(createcal(par1=2,par2=7.1))
 		"""
 		
-		valslist = list(itertools.product(*inputs.values()))
+		valslist = list(itertools.product(*parameters.values()))
 		
 		for vals in valslist:
-			input = {key:val for key,val in zip(inputs.keys(),vals)}
-			run = runcreator(**input)
-			self.add_run(run)
+			par = {key:val for key,val in zip(parameters.keys(),vals)}
+			self.add_run(runclass,par)
 
-	def save(self,run=None):
-		"""
-		saves the result and the current run index in a file in 'current directory/_res/name.pyz' or 'current directory/_res/name_run_"id".pyz'
-		"""
+	# def save(self,run=None):
+		# """
+		# saves the result and the current run index in a file in 'current directory/_res/name.pyz' or 'current directory/_res/name_run_"id".pyz'
+		# """
 		
-		if self.saveresult:
-			dirname = self._savepath()
-			if self.saverunsseparately:
-				index = self.id.index(run.id)
-				filename = os.path.join(dirname , self.name + '_run{}'.format(index))
-				np.save(filename,{'rundone':[self.rundone[index]],'res':[self.run[index].res],'id':[self.id[index]]})
-			else:
-				filename = os.path.join(dirname , self.name)
-				np.save(filename,{'rundone':self.rundone,'res':[run.res for run in self.run],'id':self.id})
+		# if self.saveresult:
+			# dirname = self._savepath()
+			# if self.saverunsseparately:
+				# index = self.id.index(run.id)
+				# filename = os.path.join(dirname , self.name + '_run{}'.format(index))
+				# np.save(filename,{'rundone':[self.rundone[index]],'res':[self.run[index].res],'id':[self.id[index]]})
+			# else:
+				# filename = os.path.join(dirname , self.name)
+				# np.save(filename,{'rundone':self.rundone,'res':[run.res for run in self.run],'id':self.id})
 		
-	def load(self,idx):
-		"""
-		check if the idx is in the loaded id's and assign the results if so
-		"""
+	# def load(self,idx):
+		# """
+		# check if the idx is in the loaded id's and assign the results if so
+		# """
 		
-		for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
-			if self.id[idx] == id:
-				self.rundone[idx] = rundone
-				self.run[idx].res.update(res)
+		# for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
+			# if self.id[idx] == id:
+				# self.rundone[idx] = rundone
+				# self.run[idx].res.update(res)
 			
-	def get_res(self,key):
-		"""
-		returns a list of results for all res
+	# def get_res(self,key):
+		# """
+		# returns a list of results for all res
 		
-		Arguments:
-		key: a key in the res dict
-		"""
-		return [ run.res[key] for run in self.run]
+		# Arguments:
+		# key: a key in the res dict
+		# """
+		# return [ run.res[key] for run in self.run]
 		
-	def __call__(self,run=-1):
+	def __call__(self,runind=-1):
 		"""
 		runs the remainder of the batch or a specified run
 		"""
@@ -151,19 +104,21 @@ class Batch(object):
 		
 		#check which runs are to be done
 		runs = []
-		if run < 0:
-			for idx in range(len(self.run)):
-				if not self.rundone[idx]:
-					runs.append(idx)
-		else:
-			if isinstance(run,list):
-				for idx in run:
-					if not self.rundone[idx]:
-						runs.append(idx)
-			else:
-				if not self.rundone[run]:
-					runs.append(run)
 		
+		
+		if isinstance(runind,list):
+			for ind in runind:
+				if not self._rundone[ind]:
+					runs.append(ind)
+		else:		
+			if runind < 0:
+				for ind in range(len(self._run)):
+					if not self._rundone[ind]:
+						runs.append(ind)
+						
+			elif not self._rundone[runind]:
+				runs.append(run)
+	
 
 		skip = int( np.ceil( len(runs)/50. ) )
 			
@@ -189,19 +144,19 @@ class Batch(object):
 			
 
 			
-			runobj = self.run[run]
+			runclass = self._run[run]['runclass']
+			parameters = self._run[run]['parameters']
+			runinstance = runclass(self,parameters)
 			
-			# update the res attribute
-			self.run[run].res = runobj()
+			# run the run
+			runinstance()
 			
 			# set the current run to done
-			self.rundone[run] = True
+			self._rundone[run] = True
 			
-			if self.saveeveryrun:
-				self.save(runobj)
-		
-		if not self.saveeveryrun and len(runs)>0:
-			self.save()
+			
+		# if not self.saveeveryrun and len(runs)>0:
+			# self.save()
 		
 		runtime = time.time()-starttime
 		print('total runtime {0:.1f} min'.format(runtime/60))
@@ -209,7 +164,7 @@ class Batch(object):
 		
 	def _savepath(self):
 		"""
-		Returns the pathe where files are saved
+		Returns the path where files are saved
 		"""
 		dirname = os.path.join(self.path, '_res' )
 		filename = os.path.join(dirname , self.name )
@@ -239,19 +194,74 @@ class Batch(object):
 	
 	
 class Run(object):
-	def __init__(self):
-		self.res = {}
-		self.id_dict = {}
-		self.id = ''
+	def __init__(self,batch,parameters,autosave=False):
+		"""
+		creates a run instance
+		"""
 		
-	def set_id(self,d):
+		self.batch = batch
+		
+		self._parameters = parameters
+		self._id = self.set_id()
+		self._autosave = autosave
+		
+		# make sure there is a res dictionary
+		self.res = {}
+		
+		self.create(**parameters)
+		
+		# load results if they exits
+		self.load()
+		
+	def create(self,**parameters):
 		"""
-		function creates an id hash from a dictionary
-		Arguments:
-		d:         dictionary
+		redefine this method in a child class to define the run
+		the method is run during the initiation of a new object with the 
+		instance parameters as keyword arguments
 		"""
+		pass
+		
+	def __call__(self):	
+		self.execute()
+		
+		if self._autosave:
+			self.save()
+		
+	def execute(self):
+		"""
+		redefine this method in a child class to define the run
+		the method is run during the execution of the batch 
+		"""
+		pass
+		
+	def _filename(self):
+		return os.path.join(self.batch.savepath , '{}_run{}'.format(self.batch.name,self._id))
+		
+	def save(self):
+		"""
+		saves the run results
+		"""
+		
+		np.save(self._filename(),{'res':self.res,'id':self._id})
+		
+	def load(self):
+		"""
+		tries to load the run results
+		"""
+		
+		try:
+			data = np.load(self._filename())
+			self.res = data['res']
+		except:
+			pass
+				
+	def set_id(self):
+		"""
+		function creates an id hash from the parameters
+		"""
+		
 		# remove the self object from the dictionary
-		id_dict = dict(d)
+		id_dict = dict(self._parameters)
 		if 'self' in id_dict:
 			del id_dict['self']
 		
@@ -260,9 +270,8 @@ class Run(object):
 			if isinstance(id_dict[key],types.ClassType):
 				id_dict[key] = id_dict[key].__name__
 				
-		
 		self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
-		self.id_dict = id_dict
+		
 		
 # helper functions
 def strlist(runs):
