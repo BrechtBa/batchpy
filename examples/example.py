@@ -6,7 +6,7 @@ class example_run(batchpy.Run):
 	def create(self,A=0,B='test'):
 	
 		self.par = {'A':A,
-					'B': B}
+					'B':B}
 		
 	def execute(self):
 		print(self.par)
@@ -23,6 +23,5 @@ batch.add_factorial_runs( example_run,
 						  
 print( batch._rundone )
 
-batch()					  
-						  
+batch()
 

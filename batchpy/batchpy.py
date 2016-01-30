@@ -6,18 +6,18 @@ import itertools
 import time
 import hashlib
 import types
+import inspect
 
 class Batch(object):
 
-	def __init__(self,name,path=''):
+	def __init__(self,name,path='',saveresult=False):
 	
 		self.name = name
 		self.path = path
 		
-		self._run = []
-		self._rundone = []
-		#self.id = []
-		
+		self.run = []
+		self.rundone = []
+		self._saveresult = saveresult
 		
 	def add_run(self,runclass,parameters):
 		"""
@@ -34,8 +34,8 @@ class Batch(object):
 		# the run will be assigned an id according to cal.id
 		"""
 		
-		self._run.append({'runclass':runclass,'parameters':parameters})
-		self._rundone.append(False)
+		self.run.append({'runclass':runclass,'parameters':parameters})
+		self.rundone.append(False)
 		
 	def add_factorial_runs(self,runclass,parameters):
 		"""
@@ -49,10 +49,10 @@ class Batch(object):
 		batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]})
 		# is equivalent with:
 		batch.add_run(createcal(par1=0,par2=5.0))
-		batch.add_run(createcal(par1=1,par2=5.0))
-		batch.add_run(createcal(par1=2,par2=5.0))
 		batch.add_run(createcal(par1=0,par2=7.1))
+		batch.add_run(createcal(par1=1,par2=5.0))
 		batch.add_run(createcal(par1=1,par2=7.1))
+		batch.add_run(createcal(par1=2,par2=5.0))
 		batch.add_run(createcal(par1=2,par2=7.1))
 		"""
 		
@@ -77,15 +77,20 @@ class Batch(object):
 				# filename = os.path.join(dirname , self.name)
 				# np.save(filename,{'rundone':self.rundone,'res':[run.res for run in self.run],'id':self.id})
 		
-	# def load(self,idx):
-		# """
-		# check if the idx is in the loaded id's and assign the results if so
-		# """
+	def get(self,run):
+		"""
 		
-		# for rundone,res,id in zip(self._temprundone,self._tempres,self._tempid):
-			# if self.id[idx] == id:
-				# self.rundone[idx] = rundone
-				# self.run[idx].res.update(res)
+		"""
+		if run > -1 and run < len(self.run):
+			runclass = self.run[run]['runclass']
+			parameters = self.run[run]['parameters']
+			runinstance = runclass(self,saveresult=self._saveresult,**parameters)
+			runinstance.load()
+		
+			return runinstance
+			
+		else:
+			raise IndexError()
 			
 	# def get_res(self,key):
 		# """
@@ -108,15 +113,15 @@ class Batch(object):
 		
 		if isinstance(runind,list):
 			for ind in runind:
-				if not self._rundone[ind]:
+				if not self.rundone[ind]:
 					runs.append(ind)
 		else:		
 			if runind < 0:
-				for ind in range(len(self._run)):
-					if not self._rundone[ind]:
+				for ind in range(len(self.run)):
+					if not self.rundone[ind]:
 						runs.append(ind)
 						
-			elif not self._rundone[runind]:
+			elif not self.rundone[runind]:
 				runs.append(run)
 	
 
@@ -143,16 +148,12 @@ class Batch(object):
 				print(title_str)
 			
 
-			
-			runclass = self._run[run]['runclass']
-			parameters = self._run[run]['parameters']
-			runinstance = runclass(self,parameters)
-			
 			# run the run
+			runinstance = self.get(run)
 			runinstance()
 			
 			# set the current run to done
-			self._rundone[run] = True
+			self.rundone[run] = True
 			
 			
 		# if not self.saveeveryrun and len(runs)>0:
@@ -162,7 +163,7 @@ class Batch(object):
 		print('total runtime {0:.1f} min'.format(runtime/60))
 		print('done')
 		
-	def _savepath(self):
+	def savepath(self):
 		"""
 		Returns the path where files are saved
 		"""
@@ -179,7 +180,7 @@ class Batch(object):
 		Returns a list of found files which should be loaded
 		"""
 		
-		dirname = self._savepath()
+		dirname = self.savepath()
 		filenames = []
 		if self.saverunsseparately:
 			files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npy', f)]
@@ -194,20 +195,29 @@ class Batch(object):
 	
 	
 class Run(object):
-	def __init__(self,batch,parameters,autosave=False):
+	def __init__(self,batch,saveresult=False,**parameters):
 		"""
 		creates a run instance
 		"""
 		
 		self.batch = batch
 		
-		self._parameters = parameters
-		self._id = self.set_id()
-		self._autosave = autosave
+		self.parameters = {}
+		a = inspect.getargspec(self.create)
+		for key,val in zip(a.args[-len(a.defaults):],a.defaults):
+			self.parameters[key] = val
+		
+		for key,val in parameters.iteritems():
+			self.parameters[key] = val
+		
+		self.set_id()
+		
+		self._saveresult = saveresult
 		
 		# make sure there is a res dictionary
 		self.res = {}
 		
+		# run the create function
 		self.create(**parameters)
 		
 		# load results if they exits
@@ -222,9 +232,9 @@ class Run(object):
 		pass
 		
 	def __call__(self):	
-		self.execute()
+		self.res = self.execute()
 		
-		if self._autosave:
+		if self._saveresult:
 			self.save()
 		
 	def execute(self):
@@ -232,17 +242,17 @@ class Run(object):
 		redefine this method in a child class to define the run
 		the method is run during the execution of the batch 
 		"""
-		pass
+		return {}
 		
 	def _filename(self):
-		return os.path.join(self.batch.savepath , '{}_run{}'.format(self.batch.name,self._id))
+		return os.path.join(self.batch.savepath() , '{}_{}.npy'.format(self.batch.name,self.id))
 		
 	def save(self):
 		"""
 		saves the run results
 		"""
 		
-		np.save(self._filename(),{'res':self.res,'id':self._id})
+		np.save(self._filename(),{'res':self.res,'id':self.id})
 		
 	def load(self):
 		"""
@@ -251,7 +261,8 @@ class Run(object):
 		
 		try:
 			data = np.load(self._filename())
-			self.res = data['res']
+			self.res = data.item()['res']
+			
 		except:
 			pass
 				
@@ -261,18 +272,21 @@ class Run(object):
 		"""
 		
 		# remove the self object from the dictionary
-		id_dict = dict(self._parameters)
+		id_dict = dict(self.parameters)
 		if 'self' in id_dict:
 			del id_dict['self']
-		
-		# replace all classes with their name as they are redefined on each startup
+			
+		# replace all classes and functions with their name as they are redefined on each startup
 		for key in id_dict.keys():
 			if isinstance(id_dict[key],types.ClassType):
 				id_dict[key] = id_dict[key].__name__
-				
+		
+			elif isinstance(id_dict[key],types.FunctionType):
+				id_dict[key] = id_dict[key].__name__
+		
+		
 		self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
-		
-		
+	
 # helper functions
 def strlist(runs):
 	if len(runs) > 5:
