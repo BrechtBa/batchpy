@@ -7,7 +7,7 @@ import time
 
 class Batch(object):
 
-	def __init__(self,name,path='',saveresult=False):
+	def __init__(self,name,path='',saveresult=True):
 	
 		self.name = name
 		self.path = path

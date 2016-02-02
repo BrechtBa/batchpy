@@ -6,7 +6,7 @@ import types
 import inspect
 
 class Run(object):
-	def __init__(self,batch,saveresult=False,**parameters):
+	def __init__(self,batch,saveresult=True,**parameters):
 		"""
 		creates a run instance
 		"""
@@ -83,19 +83,49 @@ class Run(object):
 		function creates an id hash from the parameters
 		"""
 		
-		# remove the self object from the dictionary
-		id_dict = dict(self.parameters)
-		if 'self' in id_dict:
-			del id_dict['self']
+		id_dict = {}
+		for key in self.parameters.keys():
+			c0 = isinstance(self.parameters[key],types.BooleanType)
+			c1 = isinstance(self.parameters[key],types.IntType)
+			c2 = isinstance(self.parameters[key],types.LongType)
+			c3 = isinstance(self.parameters[key],types.FloatType)
+			c4 = isinstance(self.parameters[key],types.ComplexType)
+			c5 = isinstance(self.parameters[key],types.StringType)
+			c6 = isinstance(self.parameters[key],types.UnicodeType)
+			c7 = isinstance(self.parameters[key],types.TupleType)
+			c8 = isinstance(self.parameters[key],types.ListType)
+			c9 = isinstance(self.parameters[key],types.DictType)
 			
-		# replace all classes and functions with their name as they are redefined on each startup
-		for key in id_dict.keys():
-			if isinstance(id_dict[key],types.ClassType):
-				id_dict[key] = id_dict[key].__name__
+			if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9:
+				id_dict[key] = self.parameters[key]
+				
+			elif isinstance(self.parameters[key],types.FunctionType):
+				id_dict[key] = self.parameters[key].__name__				
+			elif isinstance(self.parameters[key],types.ClassType):
+				id_dict[key] = self.parameters[key].__name__
+			elif isinstance(self.parameters[key],types.MethodType):
+				id_dict[key] = self.parameters[key].__name__
 		
-			elif isinstance(id_dict[key],types.FunctionType):
-				id_dict[key] = id_dict[key].__name__
 		
+		# remove the self object from the dictionary
+		# id_dict = dict(self.parameters)
+		# if 'self' in id_dict:
+			# del id_dict['self']
+		
+		# # replace all classes and functions with their name as they are redefined on each startup
+		# for key in id_dict.keys():
+			# if isinstance(id_dict[key],types.ClassType):
+				# id_dict[key] = id_dict[key].__name__
+			
+			# elif isinstance(id_dict[key],types.FunctionType):
+				# id_dict[key] = id_dict[key].__name__
+				
+			# elif isinstance(id_dict[key],types.InstanceType):
+				# del id_dict[key]
+				
+			# elif isinstance(id_dict[key],types.MethodType):
+				# id_dict[key] = id_dict[key].__name__
+				
 		
 		self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
 	
