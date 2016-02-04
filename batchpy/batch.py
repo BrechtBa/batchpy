@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
 import re
 import numpy as np
@@ -8,12 +8,19 @@ import time
 class Batch(object):
 
 	def __init__(self,name,path='',saveresult=True):
-	
+		"""
+		creates a batch
+		
+		Arguments:
+		name:		string, a name for the batch
+		path:		string, a optional path to store results, if not provided the current path is chosen
+		saveresult: boolean, save the results to disk or not, this argument is passed to all runs
+		"""
+		
 		self.name = name
 		self.path = path
 		
 		self.run = []
-		self.rundone = []
 		self._saveresult = saveresult
 		
 	def add_run(self,runclass,parameters):
@@ -31,8 +38,7 @@ class Batch(object):
 		# the run will be assigned an id according to cal.id
 		"""
 		
-		self.run.append({'runclass':runclass,'parameters':parameters})
-		self.rundone.append(False)
+		self.run.append(runclass(self,saveresult=self._saveresult,**parameters))
 		
 	def add_factorial_runs(self,runclass,parameters):
 		"""
@@ -57,48 +63,8 @@ class Batch(object):
 		
 		for vals in valslist:
 			par = {key:val for key,val in zip(parameters.keys(),vals)}
-			self.add_run(runclass,par)
-
-	# def save(self,run=None):
-		# """
-		# saves the result and the current run index in a file in 'current directory/_res/name.pyz' or 'current directory/_res/name_run_"id".pyz'
-		# """
-		
-		# if self.saveresult:
-			# dirname = self._savepath()
-			# if self.saverunsseparately:
-				# index = self.id.index(run.id)
-				# filename = os.path.join(dirname , self.name + '_run{}'.format(index))
-				# np.save(filename,{'rundone':[self.rundone[index]],'res':[self.run[index].res],'id':[self.id[index]]})
-			# else:
-				# filename = os.path.join(dirname , self.name)
-				# np.save(filename,{'rundone':self.rundone,'res':[run.res for run in self.run],'id':self.id})
-		
-	def get(self,run):
-		"""
-		
-		"""
-		if run > -1 and run < len(self.run):
-			runclass = self.run[run]['runclass']
-			parameters = self.run[run]['parameters']
-			runinstance = runclass(self,saveresult=self._saveresult,**parameters)
-			done = runinstance.load()
+			self.add_run( runclass,par )
 			
-			self.rundone[run] = done
-			
-			return runinstance
-			
-		else:
-			raise IndexError()
-			
-	# def get_res(self,key):
-		# """
-		# returns a list of results for all res
-		
-		# Arguments:
-		# key: a key in the res dict
-		# """
-		# return [ run.res[key] for run in self.run]
 		
 	def __call__(self,runind=-1):
 		"""
@@ -112,15 +78,15 @@ class Batch(object):
 		
 		if isinstance(runind,list):
 			for ind in runind:
-				if not self.rundone[ind]:
+				if not self.run[ind].done:
 					runs.append(ind)
 		else:		
 			if runind < 0:
 				for ind in range(len(self.run)):
-					if not self.rundone[ind]:
+					if not self.run[ind].done:
 						runs.append(ind)
 						
-			elif not self.rundone[runind]:
+			elif not self.run[ind].done:
 				runs.append(run)
 	
 
@@ -148,16 +114,7 @@ class Batch(object):
 			
 
 			# run the run
-			runinstance = self.get(run)
-			if not self.rundone[run]:
-				runinstance()
-			
-			# set the current run to done
-			self.rundone[run] = True
-			
-			
-		# if not self.saveeveryrun and len(runs)>0:
-			# self.save()
+			self.run[run]()
 		
 		runtime = time.time()-starttime
 		print('total runtime {0:.1f} min'.format(runtime/60))
@@ -177,19 +134,14 @@ class Batch(object):
 	
 	def _get_filenames(self):
 		"""
-		Returns a list of found files which should be loaded
+		Returns a list of found files which correspond to the batch
 		"""
 		
 		dirname = self.savepath()
 		filenames = []
-		if self.saverunsseparately:
-			files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npy', f)]
-			for f in files:
-				filenames.append( os.path.join(dirname , f) )
-		else:
-			filename = os.path.join(dirname , self.name + '.npy')
-			if os.path.isfile(filename):
-				filenames.append(filename)
+		files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npy', f)]
+		for f in files:
+			filenames.append( os.path.join(dirname , f) )
 				
 		return filenames
 	
