@@ -48,7 +48,6 @@ class Run(object):
 		return {}
 		
 	def __call__(self):
-		res = False
 		if not self.done:
 			res = self.run(**self.parameters)
 			if self._saveresult:
@@ -57,7 +56,11 @@ class Run(object):
 				self._result = res
 			
 			self.done = True
-		
+		else:
+			if self._saveresult:
+				res = self.load()
+			else:
+				res = self._result
 		return res
 		
 	def _filename(self):
