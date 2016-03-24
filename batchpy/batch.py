@@ -86,8 +86,8 @@ class Batch(object):
 					if not self.run[ind].done:
 						runs.append(ind)
 						
-			elif not self.run[ind].done:
-				runs.append(run)
+			elif not self.run[runind].done:
+				runs.append(runind)
 	
 
 		skip = int( np.ceil( len(runs)/50. ) )
