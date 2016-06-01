@@ -11,10 +11,10 @@ class Batch(object):
 		"""
 		creates a batch
 		
-		Arguments:
-		name:		string, a name for the batch
-		path:		string, a optional path to store results, if not provided the current path is chosen
-		saveresult: boolean, save the results to disk or not, this argument is passed to all runs
+		Parameters:
+		name:			string, a name for the batch
+		path:			string, a optional path to store results, if not provided the current path is chosen
+		saveresult: 	boolean, save the results to disk or not, this argument is passed to all runs
 		"""
 		
 		self.name = name
@@ -27,9 +27,9 @@ class Batch(object):
 		"""
 		Adds a run
 		
-		Inputs:
-		runclass: a class reference which creates an object when supplied the parameters
-		parameters: a dictionary of parameters to be supplied to the init function of the runclass
+		Parameters:
+		runclass: 		a class reference which creates an object when supplied the parameters
+		parameters: 	a dictionary of parameters to be supplied to the init function of the runclass
 		
 		Example:
 		batch.add_run(Cal,{'A':1,'B':[1,2,3],'C':'spam'})
@@ -44,7 +44,7 @@ class Batch(object):
 		"""
 		Adds runs 
 		
-		Arguments:
+		Parameters:
 		runcreator: function which returns a run object given a set of input parameters
 		inputs: dict with input names and a list of values
 		
@@ -69,6 +69,9 @@ class Batch(object):
 	def __call__(self,runind=-1):
 		"""
 		runs the remainder of the batch or a specified run
+		
+		Parameters:
+		runind:			int or list of ints, indices of the runs to be executed, -1 for all runs
 		"""
 		title_width = 80
 		
