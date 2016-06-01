@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 import re
 import numpy as np
 import itertools
@@ -114,7 +115,9 @@ class Batch(object):
 				title_str += 'eta: '+etastr
 				title_str += (title_width-len(title_str)-3)*' ' +'###'
 				print(title_str)
-			
+				
+				# flush the printing cue
+				sys.stdout.flush()
 
 			# run the run
 			self.run[run]()
@@ -122,6 +125,7 @@ class Batch(object):
 		runtime = time.time()-starttime
 		print('total runtime {0:.1f} min'.format(runtime/60))
 		print('done')
+		sys.stdout.flush()
 		
 	def savepath(self):
 		"""
