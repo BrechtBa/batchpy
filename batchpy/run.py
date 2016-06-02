@@ -32,14 +32,10 @@ class Run(object):
 		
 		
 		# create the run id
-		self.id = self._set_id(self.parameters)
+		self.id = self.set_id(self.parameters)
 		
-		# check if there are results saved with the same id
-		if os.path.isfile(self._filename()):
-			self.done = True
-		else:
-			self.done = False
-		
+		self.check_result()
+
 		
 	def run(self,**parameters):
 		"""
@@ -92,7 +88,7 @@ class Run(object):
 		except:
 			return False
 			
-	def _set_id(self,parameters):
+	def set_id(self,parameters):
 		"""
 		function creates an id hash from the parameters
 		"""
@@ -122,3 +118,9 @@ class Run(object):
 
 		return hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
 	
+	def check_result(self):
+		# check if there are results saved with the same id
+		if os.path.isfile(self._filename()):
+			self.done = True
+		else:
+			self.done = False
