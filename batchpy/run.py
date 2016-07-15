@@ -32,8 +32,9 @@ class Run(object):
         
         
         # create the run id
-        self.id = self.set_id(self.parameters)
+        self.set_id(self.parameters)
         
+        # check if there is a retuls saved
         self.check_result()
 
         
@@ -111,12 +112,14 @@ class Run(object):
                 
             elif isinstance(parameters[key],types.FunctionType):
                 id_dict[key] = parameters[key].__name__                
-            elif isinstance(parameters[key],types.ClassType):
+            elif isinstance(parameters[key],(type, types.ClassType)):
                 id_dict[key] = parameters[key].__name__
             elif isinstance(parameters[key],types.MethodType):
                 id_dict[key] = parameters[key].__name__
-
-        return hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+                
+                
+        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+        return self.id
     
     def check_result(self):
         # check if there are results saved with the same id
