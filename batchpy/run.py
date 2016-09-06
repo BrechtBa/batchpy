@@ -4,20 +4,65 @@ import numpy as np
 import hashlib
 import types
 import inspect
+#!/usr/bin/env/ python
+################################################################################
+#    Copyright (c) 2016 Brecht Baeten
+#    This file is part of batchpy.
+#    
+#    Permission is hereby granted, free of charge, to any person obtaining a
+#    copy of this software and associated documentation files (the "Software"), 
+#    to deal in the Software without restriction, including without limitation 
+#    the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+#    and/or sell copies of the Software, and to permit persons to whom the 
+#    Software is furnished to do so, subject to the following conditions:
+#    
+#    The above copyright notice and this permission notice shall be included in 
+#    all copies or substantial portions of the Software.
+################################################################################
 
+import time
 
 class Run(object):
+    """
+    A batchpy run base class        
+    
+    This class is intended as a base class from which custom user defined run
+    objects can inherit.
+    In the custom run class the :code:`run` method needs to be redefined to
+    actually run the wanted computations and return the result as a dictionary.
+    
+    Examples
+    --------
+    >>> class myrun(batchpy.run):
+    ...     def run(**parameters):
+    ...         return 2*parameters['mypar']
+    
+    """
+    
     def __init__(self,batch,saveresult=True,**parameters):
         """
-        creates a run
+        Creates a batchpy run
         
-        Arguments:
-            batch:        batch, the batch the run belongs to
-            saveresult: boolean, save the results to disk or not, if not the result is available in the _result attribute
-            parameters: other keyword parameters
+        Parameters
+        ----------
+        batch : batch
+            the batch the run belongs to
+            
+        saveresult : boolean
+            save the results to disk or not, if not the result is available
+            in the _result attribute
+            
+        **parameters : 
+            keyword parameters which modify the run instance
+           
+        Notes
+        -----
+        batchpy runs should not be created directly
+        
         """
         
         self.batch = batch
+        self.runtime = None
         self._saveresult = saveresult
         self._result = None
         
@@ -46,9 +91,15 @@ class Run(object):
         
     def __call__(self):
         if not self.done:
+            t_start = time.time()
+            
             res = self.run(**self.parameters)
+            
+            t_end = time.time()
+            self.runtime = t_end-t_start
+            
             if self._saveresult:
-                np.save(self._filename(),{'res':res,'id':self.id})
+                np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime})
             else:
                 self._result = res
             
@@ -72,6 +123,13 @@ class Run(object):
             if self._saveresult:
                 data = np.load(self._filename())
                 res = data.item()['res']
+                
+                # try - except statement for compatibility with older saved runs
+                try:
+                    self.runtime = data.item()['runtime']
+                except:
+                    pass
+                    
                 return res
             else:
                 return self._result
