@@ -33,9 +33,11 @@ class Run(object):
     
     Examples
     --------
-    >>> class myrun(batchpy.run):
-    ...     def run(**parameters):
-    ...         return 2*parameters['mypar']
+    >>> class myrun(batchpy.Run):
+    ...     def run(self,mypar=5):
+    ...         # some conplicated computation
+    ...         return {'val': 2*mypar}
+    ...
     
     """
     
@@ -59,6 +61,10 @@ class Run(object):
         -----
         batchpy runs should not be created directly
         
+        Examples
+        --------
+        >>> batch = batchpy.Batch('mybatch')
+        >>> run = myrun(batch,mypar=5)
         """
         
         self.batch = batch
@@ -83,13 +89,65 @@ class Run(object):
         self.check_result()
 
         
-    def run(self,**parameters):
+    def run(self):
         """
-        redefine this method in a child class to define the run
+        Perform calculations and return the result
+        
+        This method should be overwritten in a user defined child class to
+        perform the actual computations.
+        
+        Parameters
+        ----------
+        parameters
+            parameters can be defined as named parameters. The use of **kwargs is
+            not supported.
+        
+        Returns
+        -------
+        res : dict
+            a dictionary with the results of the run
+            
+        Examples
+        --------
+        >>> class myrun(batchpy.Run):
+        ...     def run(self,mypar=5):
+        ...         # some conplicated computation
+        ...         return {'val': 2*mypar}
+        ...
+        
         """
+
         return {}
         
     def __call__(self):
+        """
+        Checks if the run results are allready computed and compute them if not.
+        
+        When a run is called the class checks if the results are available in
+        memory or on the disk.
+        
+        When the result is available in memory, it is
+        returned. When it is available on disk, it is loaded and returned.
+        
+        When the result is not available it is computed using the :code:`run`
+        method and the results are stored on disk (if the :code:`_saveresult`
+        attribute is true) or in the :code:`_result` attribute (otherwise).
+        
+        The computation is timed and the runtime is saved in the :code:`runtime`
+        attribute.
+  
+        Returns
+        -------
+        res : dict
+            results dictionary
+            
+        Examples
+        --------
+        >>> run()
+        {'val': 10}
+        
+        """
+        
         if not self.done:
             t_start = time.time()
             
@@ -112,11 +170,30 @@ class Run(object):
         return res
         
     def _filename(self):
+        """
+        Returns the filename of the run
+        
+        """
         return os.path.join(self.batch.savepath() , '{}_{}.npy'.format(self.batch.name,self.id))
         
     def load(self):
         """
-        tries to return the run results
+        Checks if the run results are allready computed and return them if so.
+        
+        When the result is available in memory, it is
+        returned. When it is available on disk, it is loaded and returned.
+        When the result is not computed yet this returns :code:`None`
+        
+        Returns
+        -------
+        res : dict, :code:`None`
+            results dictionary. return :code:`None` if the results are not
+            available
+
+        Examples
+        --------
+        >>> run.load()
+        {'val': 10}
         """
         
         try:
@@ -138,7 +215,19 @@ class Run(object):
             
     def clear(self):
         """
-        tries to delete the result file from the disk
+        Tries to erase the run results from the disk
+        
+        Returns
+        -------
+        success : bool
+            :code:`True` if the run was deleted from the disk, :code:`False`
+            otherwise
+
+        Examples
+        --------
+        >>> run.clear()
+        True
+        
         """
         try:
             os.remove(self._filename())
@@ -149,7 +238,36 @@ class Run(object):
             
     def set_id(self,parameters):
         """
-        function creates an id hash from the parameters
+        Creates an id hash from the parameters
+        
+        The id hash is used to identify a run. It is hashed from the parameters
+        used to create the run to ensure that when even a single parameter is
+        changed the run ids are different. The id is stored in the :code`id`
+        attribute.
+        
+        Parameters
+        ----------
+        parameters : dict
+            a dictionary with parameters from which to compute the hash
+        
+        Returns
+        -------
+        id : string
+            the id hash of this run
+
+        Notes
+        -----
+        When classes, methods or functions are supplied as parameters, the hash
+        is created using their name attribute. This avoids ids being different
+        when python is restarted. A hash created from the function itself would 
+        be different each time python starts as the object resides in a
+        different memory location.
+        
+        Examples
+        --------
+        >>> run.set_id(run.parameters)
+        '10ae24979c5028fa873651bca338152dc0484245'
+        
         """
         
         id_dict = {}
@@ -160,7 +278,7 @@ class Run(object):
             c3 = isinstance(parameters[key],types.FloatType)
             c4 = isinstance(parameters[key],types.ComplexType)
             c5 = isinstance(parameters[key],types.StringType)
-            c6 = isinstance(parameters[key],types.UnicodeType)
+            c6 = isinstance(pararun.meters[key],types.UnicodeType)
             c7 = isinstance(parameters[key],types.TupleType)
             c8 = isinstance(parameters[key],types.ListType)
             c9 = isinstance(parameters[key],types.DictType)
@@ -180,6 +298,21 @@ class Run(object):
         return self.id
     
     def check_result(self):
+        """
+        Checks if a result file is stored on the disk
+       
+        Checks if a file with the correct name can be found. Is so, it sets the 
+        :code:`done` attribute to True. If not, the :code:`done` attribute is
+        set to false.
+        
+        Examples
+        --------
+        >>> run.check_result()
+        >>> run.done
+        False
+        
+        """
+        
         # check if there are results saved with the same id
         if os.path.isfile(self._filename()):
             self.done = True

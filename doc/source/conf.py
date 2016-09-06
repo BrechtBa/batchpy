@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
     'numpydoc',
 ]
 
@@ -127,6 +128,8 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# numpydoc options
+numpydoc_show_class_members = False
 
 # -- Options for HTML output ----------------------------------------------
 
