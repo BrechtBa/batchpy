@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-import os
-import numpy as np
-import hashlib
-import types
-import inspect
 #!/usr/bin/env/ python
 ################################################################################
 #    Copyright (c) 2016 Brecht Baeten
@@ -20,7 +14,12 @@ import inspect
 #    all copies or substantial portions of the Software.
 ################################################################################
 
+import os
+import hashlib
+import types
+import inspect
 import time
+import numpy as np
 
 class Run(object):
     """
@@ -38,6 +37,10 @@ class Run(object):
     ...         # some conplicated computation
     ...         return {'val': 2*mypar}
     ...
+    >>> batch = batchpy.Batch('mybatch')
+    >>> run = myrun(batch,saveresult=False,mypar=5)
+    >>> run()
+    {'val': 10}
     
     """
     
@@ -64,7 +67,7 @@ class Run(object):
         Examples
         --------
         >>> batch = batchpy.Batch('mybatch')
-        >>> run = myrun(batch,mypar=5)
+        >>> run = myrun(batch,saveresult=False,mypar=5)
         """
         
         self.batch = batch
@@ -194,6 +197,7 @@ class Run(object):
         --------
         >>> run.load()
         {'val': 10}
+        
         """
         
         try:
@@ -229,6 +233,7 @@ class Run(object):
         True
         
         """
+        
         try:
             os.remove(self._filename())
             self.done = False
@@ -278,7 +283,7 @@ class Run(object):
             c3 = isinstance(parameters[key],types.FloatType)
             c4 = isinstance(parameters[key],types.ComplexType)
             c5 = isinstance(parameters[key],types.StringType)
-            c6 = isinstance(pararun.meters[key],types.UnicodeType)
+            c6 = isinstance(parameters[key],types.UnicodeType)
             c7 = isinstance(parameters[key],types.TupleType)
             c8 = isinstance(parameters[key],types.ListType)
             c9 = isinstance(parameters[key],types.DictType)
@@ -318,3 +323,4 @@ class Run(object):
             self.done = True
         else:
             self.done = False
+            

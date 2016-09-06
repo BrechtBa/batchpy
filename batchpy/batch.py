@@ -22,15 +22,41 @@ import itertools
 import time
 
 class Batch(object):
-
+    """
+    The batchpy batch class
+    
+    A batch can contain several runs of computations. Using batchpy these
+    batches can be easily defined using python files (to support version
+    control) and run.
+    
+    The computation results can be stored in memory or saved to disk per run.
+    When the result of a run is saved it is cleared from memory which allows for
+    computations which would require more memory then available if all runs were
+    to be executed at once.
+    
+    """
+    
     def __init__(self,name,path='',saveresult=True):
         """
         creates a batch
         
-        Parameters:
-            name:            string, a name for the batch
-            path:            string, a optional path to store results, if not provided the current path is chosen
-            saveresult:      boolean, save the results to disk or not, this argument is passed to all runs
+        Parameters
+        ----------
+            name : string
+                a name for the batch
+                
+            path='' : string
+                a optional path to store results, if not provided the current
+                path is chosen
+                
+            saveresult=True : boolean
+                save the results to disk or not, this argument is passed to all
+                runs
+                
+        Examples
+        --------
+        >>> batch = batchpy.Batch('mybatch',path='res')
+        
         """
         
         self.name = name
