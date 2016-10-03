@@ -45,16 +45,16 @@ class Batch(object):
         
         Parameters
         ----------
-            name : string
-                a name for the batch
-                
-            path='' : string
-                a optional path to store results, if not provided the current
-                path is chosen
-                
-            saveresult=True : boolean
-                save the results to disk or not, this argument is passed to all
-                runs
+        name : string
+            a name for the batch
+            
+        path : string
+            a optional path to store results, if not provided the current
+            path is chosen
+            
+        saveresult : boolean
+            save the results to disk or not, this argument is passed to all
+            runs
                 
         Examples
         --------
@@ -72,15 +72,23 @@ class Batch(object):
         """
         Adds a run
         
-        Parameters:
-            runclass:        a class reference which creates an object when supplied the parameters
-            parameters:      a dictionary of parameters to be supplied to the init function of the runclass
+        Parameters
+        ----------
+        runclass : class
+            a class reference which creates an object when supplied the
+            parameters
+            
+        parameters : dict
+            a dictionary of parameters to be supplied to the init function of
+            the runclass
         
-        Example:
-            batch.add_run(Cal,{'A':1,'B':[1,2,3],'C':'spam'})
-            batch()
-            # will run cal() and store the return of cal() in batch.res[] after completion
-            # the run will be assigned an id according to cal.id
+        Examples
+        --------
+        >>> batch.add_run(Cal,{'A':1,'B':[1,2,3],'C':'spam'})
+        >>> batch()
+        
+        # will run cal() and store the return of cal() in batch.res[] after completion
+        # the run will be assigned an id according to cal.id
         """
         
         self.run.append(runclass(self,saveresult=self._saveresult,**parameters))
@@ -89,19 +97,28 @@ class Batch(object):
         """
         Adds runs 
         
-        Parameters:
-            runcreator:      function which returns a run object given a set of input parameters
-            inputs:          dict with input names and a list of values
+        Parameters
+        ----------
+        runclass : class
+            a class reference which creates an object when supplied the
+            parameters
         
-        Example:
-            batch.add_factorial_runs(createcal,{'par1':[0,1,2],'par2':[5.0,7.1]})
-            # is equivalent with:
-            batch.add_run(createcal(par1=0,par2=5.0))
-            batch.add_run(createcal(par1=0,par2=7.1))
-            batch.add_run(createcal(par1=1,par2=5.0))
-            batch.add_run(createcal(par1=1,par2=7.1))
-            batch.add_run(createcal(par1=2,par2=5.0))
-            batch.add_run(createcal(par1=2,par2=7.1))
+        parameters : dict
+            a dictionary of lists of parameters to be supplied to the init
+            function of the runclass
+        
+        Examples
+        --------
+        >>> batch.add_factorial_runs(Cal,{'par1':[0,1,2],'par2':[5.0,7.1]})
+        
+        # is equivalent with:
+        >>> batch.add_run(Cal(par1=0,par2=5.0))
+        >>> batch.add_run(Cal(par1=0,par2=7.1))
+        >>> batch.add_run(Cal(par1=1,par2=5.0))
+        >>> batch.add_run(Cal(par1=1,par2=7.1))
+        >>> batch.add_run(Cal(par1=2,par2=5.0))
+        >>> batch.add_run(Cal(par1=2,par2=7.1))
+        
         """
         
         valslist = list(itertools.product(*parameters.values()))
@@ -111,37 +128,39 @@ class Batch(object):
             self.add_run( runclass,par )
             
         
-    def __call__(self,runind=-1):
+    def __call__(self,runs=-1):
         """
         runs the remainder of the batch or a specified run
         
-        Parameters:
-            runind:          int or list of ints, indices of the runs to be executed, -1 for all runs
+        Parameters
+        ----------
+        runs : int or list of ints
+            indices of the runs to be executed, -1 for all runs
+            
         """
         title_width = 80
         
-        #check which runs are to be done
-        runs = []
+        # check which runs are to be done
+        expandedruns = []
         
-        
-        if isinstance(runind,list):
-            for ind in runind:
+        if isinstance(runs,list):
+            for ind in runs:
                 if not self.run[ind].done:
-                    runs.append(ind)
+                    expandedruns.append(ind)
         else:        
-            if runind < 0:
+            if runs < 0:
                 for ind in range(len(self.run)):
                     if not self.run[ind].done:
-                        runs.append(ind)
+                        expandedruns.append(ind)
                         
-            elif not self.run[runind].done:
-                runs.append(runind)
+            elif not self.run[runs].done:
+                expandedruns.append(runs)
     
-
-        skip = int( np.ceil( len(runs)/50. ) )
+        # derermine when to print the title string
+        skip = int( np.ceil( len(expandedruns)/50. ) )
             
         starttime = time.time()
-        for i,run in enumerate(runs):
+        for i,run in enumerate(expandedruns):
             
             # print the run title string
             if i%skip==0:
@@ -149,10 +168,10 @@ class Batch(object):
                 if i==0:
                     etastr = '/'
                 else:
-                    etastr = '{0:.1f} min'.format( runtime/i*(len(runs)-i)/60 )
+                    etastr = '{0:.1f} min'.format( runtime/i*(len(expandedruns)-i)/60 )
                     
                 title_str = '### run {0} in '.format(run)
-                title_str += strlist(runs)
+                title_str += strlist(expandedruns)
                 title_str += (40-len(title_str))*' '
                 title_str += 'runtime: {0:.1f} min'.format(runtime/60)
                 title_str += 4*' '
