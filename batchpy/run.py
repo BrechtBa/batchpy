@@ -290,8 +290,9 @@ class Run(object):
             c7 = isinstance(parameters[key],types.TupleType)
             c8 = isinstance(parameters[key],types.ListType)
             c9 = isinstance(parameters[key],types.DictType)
+            c10 = isinstance(parameters[key],np.ndarray)
             
-            if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9:
+            if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9 or c10:
                 id_dict[key] = parameters[key]
                 
             elif isinstance(parameters[key],types.FunctionType):
