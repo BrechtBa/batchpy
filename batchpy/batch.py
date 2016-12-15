@@ -143,7 +143,7 @@ class Batch(object):
         # check which runs are to be done
         expandedruns = []
         
-        if isinstance(runs,list):
+        if isinstance(runs,list) or isinstance(runs,np.ndarray):
             for ind in runs:
                 if not self.run[ind].done:
                     expandedruns.append(ind)
