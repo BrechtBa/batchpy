@@ -89,9 +89,15 @@ class Batch(object):
         
         # will run cal() and store the return of cal() in batch.res[] after completion
         # the run will be assigned an id according to cal.id
+        
         """
         
-        self.run.append(runclass(self,saveresult=self._saveresult,**parameters))
+        run = runclass(self,saveresult=self._saveresult,**parameters)
+        self.run.append(run)
+        
+        # set the run index
+        run.index = self.run.index(run)
+        
         
     def add_factorial_runs(self,runclass,parameters):
         """
@@ -127,10 +133,79 @@ class Batch(object):
             par = {key:val for key,val in zip(parameters.keys(),vals)}
             self.add_run( runclass,par )
             
+    def add_run_by_id(self,id):
+        """
+        Adds saved runs by id
+        
+        Parameters
+        ----------
+        id : string or list of strings
+        """
+        
+        if not hasattr(id,'__iter__'):
+            id = [id]
+        print(id)    
+            
+            
+    def get_runs_with(self,**kwargs):
+        """
+        Returns a list of runs with the specified parameter values
+        
+        Parameters
+        ----------
+        key=value pairs of parameters
+        
+        Several conditions can be appended to a parameter:
+        `__eq`: equal, same as appending nothing
+        `__ne`: not equal
+        `__ge`: greater or equal
+        `__le`: less or equal
+        
+        Example
+        -------
+        
+        """
+        
+        runs = []
+        for run in self.run:
+            add = True
+            for key,val in kwargs.items():
+            
+                # create the condition
+                if key.endswith('__eq'):
+                    condition = lambda par,val: np.isclose( par,val )
+                    key = key[:-4]
+                if key.endswith('__ne'):
+                    condition = lambda par,val: not np.isclose( par,val )
+                    key = key[:-4]
+                elif key.endswith('__ge'):
+                    condition = lambda par,val: par >= val
+                    key = key[:-4]
+                elif key.endswith('__le'):
+                    condition = lambda par,val: par <= val
+                    key = key[:-4]
+                else:
+                    condition = lambda par,val: np.isclose( par,val )
+                    
+                # check the condition
+                if key in run.parameters:
+                    con = condition( run.parameters[key],val )
+                    if hasattr(con,'__iter__'):
+                        con = con.all()
+                        
+                    if not con:
+                        add = False
+                        break
+  
+            if add:
+                runs.append(run)
+                
+        return runs
+        
         
     def __call__(self,runs=-1):
         """
-        runs the remainder of the batch or a specified run
+        Runs the remainder of the batch or a specified run
         
         Parameters
         ----------

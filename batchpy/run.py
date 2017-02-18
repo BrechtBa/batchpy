@@ -74,6 +74,7 @@ class Run(object):
         """
         
         self.batch = batch
+        self.index = None
         self.runtime = None
         self._saveresult = saveresult
         self._result = None
@@ -91,6 +92,7 @@ class Run(object):
         # create the run id
         self.set_id(self.parameters)
         
+            
         # check if there is a retuls saved
         self.check_result()
 
