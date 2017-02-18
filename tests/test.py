@@ -46,6 +46,21 @@ class TestRun(unittest.TestCase):
         testinstance2 = testclass(batch,A=2)
         
         self.assertNotEqual(testinstance1.id,testinstance2.id)
+        
+    def test_create_run_id_function(self):
+        batch = batchpy.Batch(name='testbatch')
+        
+        def funA(x):
+            return x
+            
+        def funB(x):
+            return 2*x
+            
+        testinstance1 = testclass(batch,A=2,B=funA)
+        testinstance2 = testclass(batch,A=2,B=funB)
+        print(testinstance1.id)
+        self.assertNotEqual(testinstance1.id,testinstance2.id)
+    
     
     def test_create_equal_run(self):
         batch = batchpy.Batch(name='testbatch')

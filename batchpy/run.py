@@ -165,7 +165,7 @@ class Run(object):
             self.runtime = t_end-t_start
             
             if self._saveresult:
-                np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime})
+                np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': {key:self._serialize(val) for key,val in self.parameters.items()}})
             else:
                 self._result = res
             
@@ -246,6 +246,49 @@ class Run(object):
         except:
             return False
             
+            
+    def _serialize(self,par):
+        """
+        Serialize a parameter
+        
+        Parameters
+        ----------
+        par : anything
+            a dictionary
+            
+        Notes
+        -----
+        Not all parameter types are serializable. If a parameter can not be
+        serialized ``'__unserializable__'`` is returned
+        
+        """
+        
+        serialized = '__unserializable__'
+        
+        c0 = isinstance(par,types.BooleanType)
+        c1 = isinstance(par,types.IntType)
+        c2 = isinstance(par,types.LongType)
+        c3 = isinstance(par,types.FloatType)
+        c4 = isinstance(par,types.ComplexType)
+        c5 = isinstance(par,types.StringType)
+        c6 = isinstance(par,types.UnicodeType)
+        c7 = isinstance(par,types.TupleType)
+        c8 = isinstance(par,types.ListType)
+        c9 = isinstance(par,types.DictType)
+        c10 = isinstance(par,np.ndarray)
+        
+        if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9 or c10:
+            serialized = par
+        elif isinstance(par,types.FunctionType):
+            serialized = par.__name__                
+        elif isinstance(par,(type, types.ClassType)):
+            serialized = par.__name__
+        elif isinstance(par,types.MethodType):
+            serialized = par.__name__
+                
+        return serialized
+        
+        
     def set_id(self,parameters):
         """
         Creates an id hash from the parameters
@@ -280,31 +323,7 @@ class Run(object):
         
         """
         
-        id_dict = {}
-        for key in parameters.keys():
-            c0 = isinstance(parameters[key],types.BooleanType)
-            c1 = isinstance(parameters[key],types.IntType)
-            c2 = isinstance(parameters[key],types.LongType)
-            c3 = isinstance(parameters[key],types.FloatType)
-            c4 = isinstance(parameters[key],types.ComplexType)
-            c5 = isinstance(parameters[key],types.StringType)
-            c6 = isinstance(parameters[key],types.UnicodeType)
-            c7 = isinstance(parameters[key],types.TupleType)
-            c8 = isinstance(parameters[key],types.ListType)
-            c9 = isinstance(parameters[key],types.DictType)
-            c10 = isinstance(parameters[key],np.ndarray)
-            
-            if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9 or c10:
-                id_dict[key] = parameters[key]
-                
-            elif isinstance(parameters[key],types.FunctionType):
-                id_dict[key] = parameters[key].__name__                
-            elif isinstance(parameters[key],(type, types.ClassType)):
-                id_dict[key] = parameters[key].__name__
-            elif isinstance(parameters[key],types.MethodType):
-                id_dict[key] = parameters[key].__name__
-                
-                
+        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not val == '__unserializable__'}
         self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
         return self.id
     
