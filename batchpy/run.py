@@ -165,7 +165,7 @@ class Run(object):
             self.runtime = t_end-t_start
             
             if self._saveresult:
-                np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': {key:self._serialize(val) for key,val in self.parameters.items()}})
+                self._save(res)
             else:
                 self._result = res
             
@@ -177,6 +177,7 @@ class Run(object):
                 res = self._result
         return res
         
+        
     def _filename(self):
         """
         Returns the filename of the run
@@ -184,9 +185,22 @@ class Run(object):
         """
         return os.path.join(self.batch.savepath() , '{}_{}.npy'.format(self.batch.name,self.id))
         
+        
+    def _save(self,res):
+        """
+        Saves the result in res
+        
+        Parameters
+        ----------
+        res : dict
+            The result dictionary
+        """
+        np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': {key:self._serialize(val) for key,val in self.parameters.items()}})
+
+        
     def load(self):
         """
-        Checks if the run results are allready computed and return them if so.
+        Checks if the run results are already computed and return them if so.
         
         When the result is available in memory, it is
         returned. When it is available on disk, it is loaded and returned.
@@ -207,20 +221,23 @@ class Run(object):
         
         try:
             if self._saveresult:
-                data = np.load(self._filename())
-                res = data.item()['res']
+                data = np.load(self._filename()).item()
+                res = data['res']
                 
                 # try - except statement for compatibility with older saved runs
-                try:
-                    self.runtime = data.item()['runtime']
-                except:
-                    pass
+                if 'runtime' in data:
+                    self.runtime = data['runtime']
+                
+                if not 'parameters' in data:
+                    print('Convert')
                     
+                
                 return res
             else:
                 return self._result
         except:
             return None
+            
             
     def clear(self):
         """
@@ -263,7 +280,7 @@ class Run(object):
         
         """
         
-        serialized = '__unserializable__'
+        serialized = '__unhashable__'
         
         c0 = isinstance(par,types.BooleanType)
         c1 = isinstance(par,types.IntType)
@@ -323,7 +340,7 @@ class Run(object):
         
         """
         
-        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not val == '__unserializable__'}
+        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not val == '__unhashable__'}
         self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
         return self.id
     
@@ -348,4 +365,29 @@ class Run(object):
             self.done = True
         else:
             self.done = False
-            
+    
+
+
+class ResultRun(Run):
+    """
+    Object containing the results of a run
+    
+    """
+    def __init__(self):
+        pass
+
+        
+        
+def convert_run_to_newstyle(run):
+    """
+    Converts a saved run result to include the parameters
+    
+    Parameters
+    ----------
+    run : batchpy.Run object
+        The run to convert the result from
+    """
+    
+    res = run.load()
+    if not res is None:
+        run._save(res)

@@ -46,14 +46,14 @@ class Batch(object):
         Parameters
         ----------
         name : string
-            a name for the batch
+            A name for the batch
             
         path : string
-            a optional path to store results, if not provided the current
+            A optional path to store results, if not provided the current
             path is chosen
             
         saveresult : boolean
-            save the results to disk or not, this argument is passed to all
+            Save the results to disk or not, this argument is passed to all
             runs
                 
         Examples
@@ -75,11 +75,11 @@ class Batch(object):
         Parameters
         ----------
         runclass : class
-            a class reference which creates an object when supplied the
+            A class reference which creates an object when supplied the
             parameters
             
         parameters : dict
-            a dictionary of parameters to be supplied to the init function of
+            A dictionary of parameters to be supplied to the init function of
             the runclass
         
         Examples
@@ -106,11 +106,11 @@ class Batch(object):
         Parameters
         ----------
         runclass : class
-            a class reference which creates an object when supplied the
+            A class reference which creates an object when supplied the
             parameters
         
         parameters : dict
-            a dictionary of lists of parameters to be supplied to the init
+            A dictionary of lists of parameters to be supplied to the init
             function of the runclass
         
         Examples
@@ -133,13 +133,14 @@ class Batch(object):
             par = {key:val for key,val in zip(parameters.keys(),vals)}
             self.add_run( runclass,par )
             
-    def add_run_by_id(self,id):
+    def add_resultrun(self,id):
         """
         Adds saved runs by id
         
         Parameters
         ----------
         id : string or list of strings
+            
         """
         
         if not hasattr(id,'__iter__'):
@@ -203,14 +204,17 @@ class Batch(object):
         return runs
         
         
-    def __call__(self,runs=-1):
+    def __call__(self,runs=-1,verbose=2):
         """
         Runs the remainder of the batch or a specified run
         
         Parameters
         ----------
         runs : int or list of ints
-            indices of the runs to be executed, -1 for all runs
+            Indices of the runs to be executed, -1 for all runs
+        
+        verbose : int
+            Integer determining the amount of printed output 0/1/2
             
         """
         title_width = 80
@@ -236,34 +240,39 @@ class Batch(object):
             
         starttime = time.time()
         for i,run in enumerate(expandedruns):
-            
-            # print the run title string
-            if i%skip==0:
-                runtime = time.time()-starttime
-                if i==0:
-                    etastr = '/'
-                else:
-                    etastr = '{0:.1f} min'.format( runtime/i*(len(expandedruns)-i)/60 )
+        
+            if verbose > 1:
+                # print the run title string
+                if i%skip==0:
+                    runtime = time.time()-starttime
+                    if i==0:
+                        etastr = '/'
+                    else:
+                        etastr = '{0:.1f} min'.format( runtime/i*(len(expandedruns)-i)/60 )
+                        
+                    title_str = '### run {0} in '.format(run)
+                    title_str += strlist(expandedruns)
+                    title_str += (40-len(title_str))*' '
+                    title_str += 'runtime: {0:.1f} min'.format(runtime/60)
+                    title_str += 4*' '
+                    title_str += 'eta: '+etastr
+                    title_str += (title_width-len(title_str)-3)*' ' +'###'
                     
-                title_str = '### run {0} in '.format(run)
-                title_str += strlist(expandedruns)
-                title_str += (40-len(title_str))*' '
-                title_str += 'runtime: {0:.1f} min'.format(runtime/60)
-                title_str += 4*' '
-                title_str += 'eta: '+etastr
-                title_str += (title_width-len(title_str)-3)*' ' +'###'
-                print(title_str)
+
+                    print(title_str)
                 
-                # flush the printing cue
-                sys.stdout.flush()
+                    # flush the printing cue
+                    sys.stdout.flush()
 
             # run the run
             self.run[run]()
         
         runtime = time.time()-starttime
-        print('total runtime {0:.1f} min'.format(runtime/60))
-        print('done')
-        sys.stdout.flush()
+        
+        if verbose > 1:
+            print('total runtime {0:.1f} min'.format(runtime/60))
+            print('done')
+            sys.stdout.flush()
         
     def savepath(self):
         """

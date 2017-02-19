@@ -57,11 +57,18 @@ class TestRun(unittest.TestCase):
             return 2*x
             
         testinstance1 = testclass(batch,A=2,B=funA)
-        testinstance2 = testclass(batch,A=2,B=funB)
-        print(testinstance1.id)
-        self.assertNotEqual(testinstance1.id,testinstance2.id)
-    
-    
+        
+        self.assertEqual(testinstance1.id,'9775c501a22ccaf216f2cf3b5498ecb42693cbcd')
+        
+        
+    def test_create_run_id_bytes(self):
+        batch = batchpy.Batch(name='testbatch')
+     
+        testinstance1 = testclass(batch,A=2,B=bytearray.fromhex('deadbeef'))
+        
+        self.assertEqual(testinstance1.id,'f63b306d9d2e97075bbe4159dce673d0c065fca3')
+ 
+        
     def test_create_equal_run(self):
         batch = batchpy.Batch(name='testbatch')
         
@@ -221,7 +228,7 @@ class TestBatch(unittest.TestCase):
         res = batch.run[1].load()
         self.assertEqual(res,{'a':range(2000),'b':[]})
         
-    def test_add_run_by_id(self):
+    def test_add_resultrun(self):
     
         clear_res()
         
@@ -234,7 +241,7 @@ class TestBatch(unittest.TestCase):
         
         # delete and recreate the batch
         batch = batchpy.Batch(name='testbatch')
-        batch.add_run_by_id(id)
+        batch.add_resultrun(id)
         
         # batch.add_run(testclass,{'A':1000})
         # batch.add_run(testclass,{'A':2000})
