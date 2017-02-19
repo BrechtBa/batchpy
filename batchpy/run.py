@@ -299,10 +299,14 @@ class Run(object):
         if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9 or c10:
             serialized = par
         elif isinstance(par,types.FunctionType):
-            serialized = par.__name__                
+            serialized = par.__name__
+        elif isinstance(par,types.BuiltinFunctionType):
+            serialized = par.__name__
         elif isinstance(par,(type, types.ClassType)):
             serialized = par.__name__
         elif isinstance(par,types.MethodType):
+            serialized = par.__name__
+        elif isinstance(par,types.BuiltinMethodType):   
             serialized = par.__name__
                 
         return serialized

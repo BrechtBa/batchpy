@@ -209,7 +209,7 @@ class Batch(object):
         return runs
         
         
-    def __call__(self,runs=-1,verbose=2):
+    def __call__(self,runs=-1,verbose=1):
         """
         Runs the remainder of the batch or a specified run
         
@@ -240,13 +240,16 @@ class Batch(object):
             elif not self.run[runs].done:
                 expandedruns.append(runs)
     
-        # derermine when to print the title string
-        skip = int( np.ceil( len(expandedruns)/50. ) )
+        # determine when to print the title string
+        if verbose > 1:
+            skip = 1
+        elif verbose > 0:
+            skip = int( np.ceil( len(expandedruns)/50. ) )
             
         starttime = time.time()
         for i,run in enumerate(expandedruns):
         
-            if verbose > 1:
+            if verbose > 0:
                 # print the run title string
                 if i%skip==0:
                     runtime = time.time()-starttime
@@ -274,7 +277,7 @@ class Batch(object):
         
         runtime = time.time()-starttime
         
-        if verbose > 1:
+        if verbose > 0:
             print('total runtime {0:.1f} min'.format(runtime/60))
             print('done')
             sys.stdout.flush()
