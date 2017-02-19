@@ -408,10 +408,12 @@ def convert_run_to_newstyle(run):
     
     Parameters
     ----------
-    run : batchpy.Run object
+    run : batchpy.Run object or child class
         The run to convert the result from
     """
     
     res = run.load()
     if not res is None:
         run._save(res)
+        
+        

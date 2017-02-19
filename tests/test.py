@@ -29,8 +29,9 @@ def clear_res():
             print e    
         
         
-        
-# run class testing ############################################################    
+################################################################################
+# run class testing 
+################################################################################
 class TestRun(unittest.TestCase):
     
     def test_create_run_arguments(self):
@@ -88,8 +89,9 @@ class TestRun(unittest.TestCase):
     
     
     
-    
-# batch class testing ##########################################################
+################################################################################
+# batch class testing
+################################################################################
 class TestBatch(unittest.TestCase):
 
     def test_create_batch(self):
@@ -266,7 +268,34 @@ class TestBatch(unittest.TestCase):
         runs = batch.get_runs_with(A__ge=1500)
         self.assertIn(batch.run[1],runs)
         self.assertEqual(len(runs),1)
-          
-          
+        
+        
+################################################################################
+# various testing
+################################################################################
+    def test_convert_run_to_newstyle(self):        
+        clear_res()
+        
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(testclass,{'A':1000})
+        batch.add_run(testclass,{'A':2000})
+        batch(verbose=0)
+        
+        ids = [run.id for run in batch.run]
+        
+        for run in batch.run:
+            batchpy.convert_run_to_newstyle(run)
+        
+        # delete and recreate the batch
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_resultrun(ids)
+        
+        res = batch.run[0].load()
+        self.assertEqual(res,{'a':range(1000),'b':[]})
+        
+        res = batch.run[1].load()
+        self.assertEqual(res,{'a':range(2000),'b':[]})
+            
+            
 if __name__ == '__main__':
     unittest.main()
