@@ -66,7 +66,7 @@ class TestRun(unittest.TestCase):
      
         testinstance1 = testclass(batch,A=2,B=bytearray.fromhex('deadbeef'))
         
-        self.assertEqual(testinstance1.id,'f63b306d9d2e97075bbe4159dce673d0c065fca3')
+        self.assertEqual(testinstance1.id,'2499831338ca5dc8c44f3d063e076799bea9bdff')
  
         
     def test_create_equal_run(self):
@@ -171,7 +171,7 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch',saveresult=False)
         batch.add_run(testclass,{'A':10})
         batch.add_run(testclass,{'A':20})
-        batch()
+        batch(verbose=0)
         
         res = batch.run[0].load()
         self.assertEqual(res,{'a':range(10),'b':[]})
@@ -186,7 +186,7 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch',saveresult=True)
         batch.add_run(testclass,{'A':1000})
         batch.add_run(testclass,{'A':2000})
-        batch()
+        batch(verbose=0)
     
     def test_run_rerun(self):
         
@@ -196,14 +196,14 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_run(testclass,{'A':100000})
         batch.add_run(testclass,{'A':200000})
-        batch()
+        batch(verbose=0)
         end1 = time.time()
             
         start2 = time.time()
         batch = batchpy.Batch(name='testbatch')
         batch.add_run(testclass,{'A':100000})
         batch.add_run(testclass,{'A':200000})
-        batch()
+        batch(verbose=0)
         end2 = time.time()
         
         self.assertTrue( (end1-start1) > (end2-start2) )
@@ -215,7 +215,7 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_run(testclass,{'A':1000})
         batch.add_run(testclass,{'A':2000})
-        batch()
+        batch(verbose=0)
         
         # delete and recreate the batch
         batch = batchpy.Batch(name='testbatch')
@@ -235,24 +235,37 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_run(testclass,{'A':1000})
         batch.add_run(testclass,{'A':2000})
-        batch()
+        batch(verbose=0)
         
-        id = [batch.run[0].id,batch.run[1].id]
+        ids = [run.id for run in batch.run]
         
         # delete and recreate the batch
         batch = batchpy.Batch(name='testbatch')
-        batch.add_resultrun(id)
+        batch.add_resultrun(ids)
         
-        # batch.add_run(testclass,{'A':1000})
-        # batch.add_run(testclass,{'A':2000})
+        res = batch.run[0].load()
+        self.assertEqual(res,{'a':range(1000),'b':[]})
         
-        # res = batch.run[0].load()
-        # self.assertEqual(res,{'a':range(1000),'b':[]})
+        res = batch.run[1].load()
+        self.assertEqual(res,{'a':range(2000),'b':[]})
         
-        # res = batch.run[1].load()
-        # self.assertEqual(res,{'a':range(2000),'b':[]})
+    def test_get_runs_with_resultrun(self):  
+        clear_res()
         
-
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(testclass,{'A':1000})
+        batch.add_run(testclass,{'A':2000})
+        batch(verbose=0)
+        
+        ids = [run.id for run in batch.run]
+        
+        # delete and recreate the batch
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_resultrun(ids)
+        
+        runs = batch.get_runs_with(A__ge=1500)
+        self.assertIn(batch.run[1],runs)
+        self.assertEqual(len(runs),1)
           
           
 if __name__ == '__main__':

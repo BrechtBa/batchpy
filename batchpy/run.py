@@ -79,7 +79,9 @@ class Run(object):
         self._saveresult = saveresult
         self._result = None
         
+        
         # get the parameters from the run function
+        self._resultonly = False
         self.parameters = {}
         a = inspect.getargspec(self.run)
         for key,val in zip(a.args[-len(a.defaults):],a.defaults):
@@ -91,9 +93,9 @@ class Run(object):
         
         # create the run id
         self.set_id(self.parameters)
-        
             
-        # check if there is a retuls saved
+            
+        # check if there is a result saved
         self.check_result()
 
         
@@ -224,12 +226,12 @@ class Run(object):
                 data = np.load(self._filename()).item()
                 res = data['res']
                 
-                # try - except statement for compatibility with older saved runs
+                # if statement for compatibility with older saved runs
                 if 'runtime' in data:
                     self.runtime = data['runtime']
                 
                 if not 'parameters' in data:
-                    print('Convert')
+                    print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
                     
                 
                 return res
@@ -340,7 +342,8 @@ class Run(object):
         
         """
         
-        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not val == '__unhashable__'}
+        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
+
         self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
         return self.id
     
@@ -367,15 +370,36 @@ class Run(object):
             self.done = False
     
 
-
+    
 class ResultRun(Run):
     """
-    Object containing the results of a run
+    A class to load run results
     
     """
-    def __init__(self):
-        pass
-
+    
+    def __init__(self,batch,id):
+        
+        
+        self.batch = batch
+        self.index = None
+        self.runtime = None
+        self._saveresult = True
+        self.done = True
+        self._result = None
+        
+        
+        self.id = id
+        
+        if os.path.isfile(self._filename()):
+            data = np.load(self._filename()).item()
+            self.parameters = data['parameters']
+            
+            del data
+        else:
+            raise Exception('Result not found, no file with filename: {}'.format(self._filename()))
+        
+  
+        
         
         
 def convert_run_to_newstyle(run):

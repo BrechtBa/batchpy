@@ -24,6 +24,8 @@ import numpy as np
 import itertools
 import time
 
+from . import run
+
 class Batch(object):
     """
     The batchpy batch class
@@ -133,19 +135,22 @@ class Batch(object):
             par = {key:val for key,val in zip(parameters.keys(),vals)}
             self.add_run( runclass,par )
             
-    def add_resultrun(self,id):
+    def add_resultrun(self,ids):
         """
         Adds saved runs by id
         
         Parameters
         ----------
-        id : string or list of strings
+        ids : string or list of strings
             
         """
         
-        if not hasattr(id,'__iter__'):
-            id = [id]
-        print(id)    
+        if not hasattr(ids,'__iter__'):
+            ids = [ids]
+        
+        for id in ids:
+            r = run.ResultRun(self,id)
+            self.run.append(r)
             
             
     def get_runs_with(self,**kwargs):
