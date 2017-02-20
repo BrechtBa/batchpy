@@ -61,15 +61,6 @@ class TestRun(unittest.TestCase):
         
         self.assertEqual(testinstance1.id,'9775c501a22ccaf216f2cf3b5498ecb42693cbcd')
         
-        
-    def test_create_run_id_bytes(self):
-        batch = batchpy.Batch(name='testbatch')
-     
-        testinstance1 = testclass(batch,A=2,B=bytearray.fromhex('deadbeef'))
-        
-        self.assertEqual(testinstance1.id,'2499831338ca5dc8c44f3d063e076799bea9bdff')
- 
-        
     def test_create_equal_run(self):
         batch = batchpy.Batch(name='testbatch')
         
@@ -85,7 +76,6 @@ class TestRun(unittest.TestCase):
         
         res = testinstance()
         self.assertEqual(res,{'a':range(100),'b':[]})
-    
     
     
     

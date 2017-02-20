@@ -283,32 +283,39 @@ class Run(object):
         """
         
         serialized = '__unhashable__'
+          
+        nametypes = [
+            types.BuiltinFunctionType,
+            types.BuiltinMethodType,
+            types.ClassType,
+            types.FunctionType,
+            types.GeneratorType,
+            types.InstanceType,
+            types.LambdaType,
+            types.MethodType,
+            types.ModuleType,
+            types.TypeType,
+            types.UnboundMethodType
+        ]
         
-        c0 = isinstance(par,types.BooleanType)
-        c1 = isinstance(par,types.IntType)
-        c2 = isinstance(par,types.LongType)
-        c3 = isinstance(par,types.FloatType)
-        c4 = isinstance(par,types.ComplexType)
-        c5 = isinstance(par,types.StringType)
-        c6 = isinstance(par,types.UnicodeType)
-        c7 = isinstance(par,types.TupleType)
-        c8 = isinstance(par,types.ListType)
-        c9 = isinstance(par,types.DictType)
-        c10 = isinstance(par,np.ndarray)
         
-        if c1 or c2 or c3 or c4 or c5 or c6 or c7 or c8 or c9 or c10:
-            serialized = par
-        elif isinstance(par,types.FunctionType):
-            serialized = par.__name__
-        elif isinstance(par,types.BuiltinFunctionType):
-            serialized = par.__name__
-        elif isinstance(par,(type, types.ClassType)):
-            serialized = par.__name__
-        elif isinstance(par,types.MethodType):
-            serialized = par.__name__
-        elif isinstance(par,types.BuiltinMethodType):   
-            serialized = par.__name__
-                
+        if isinstance(par,types.CodeType):
+            serialized = par.co_code
+        elif isinstance(par,types.FileType):
+            serialized = par.name
+        else:
+            for t in nametypes:
+                if isinstance(par,t):
+                    serialized = par.__name__
+                    break
+                    
+            if serialized == '__unhashable__':
+                string = str(par)
+                if string[0]=='<' and string[-1]=='>' and 'at 0x' in string:
+                    print('WARNING: parameter {} can not be hashed and is not included in the id which could lead to loss of data and undesired results'.format(par) )
+                else:
+                    serialized = par
+                    
         return serialized
         
         
@@ -347,7 +354,7 @@ class Run(object):
         """
         
         id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
-
+        
         self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
         return self.id
     
