@@ -403,7 +403,11 @@ class ResultRun(Run):
         
         if os.path.isfile(self._filename()):
             data = np.load(self._filename()).item()
-            self.parameters = data['parameters']
+            
+            if 'parameters' in data:
+                self.parameters = data['parameters']
+            else:
+                self.parameters = None
             
             del data
         else:

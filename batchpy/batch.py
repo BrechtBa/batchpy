@@ -181,19 +181,37 @@ class Batch(object):
             
                 # create the condition
                 if key.endswith('__eq'):
-                    condition = lambda par,val: np.isclose( par,val )
+                    def condition(par,val):
+                        try:
+                            return np.isclose( par,val )
+                        except:
+                            return par == val
                     key = key[:-4]
+                    
                 if key.endswith('__ne'):
-                    condition = lambda par,val: not np.isclose( par,val )
+                    def condition(par,val):
+                        try:
+                            return not np.isclose( par,val )
+                        except:
+                            return not par == val
                     key = key[:-4]
+                    
                 elif key.endswith('__ge'):
-                    condition = lambda par,val: par >= val
+                    def condition(par,val):
+                        return par >= val
                     key = key[:-4]
+                    
                 elif key.endswith('__le'):
-                    condition = lambda par,val: par <= val
+                    def condition(par,val):
+                        return par <= val
                     key = key[:-4]
+                    
                 else:
-                    condition = lambda par,val: np.isclose( par,val )
+                    def condition(par,val):
+                        try:
+                            return np.isclose( par,val )
+                        except:
+                            return par == val
                     
                 # check the condition
                 if key in run.parameters:
