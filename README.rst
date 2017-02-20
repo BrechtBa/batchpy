@@ -1,9 +1,9 @@
 batchpy
 =======
 
-A package to run large or small batches of similar calculations and storing the results so no double calculations are performed.
+A python package to run large or small batches of similar calculations and storing the results so no double calculations are performed.
 
-The example below should explain the work flow
+The example below should explain the workflow.
 
 Installation
 ------------

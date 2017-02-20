@@ -19,7 +19,7 @@ setup(
     name='batchpy',
     version=version,
     license='GPLv3',
-    description='A package to run efficiently run batches of similar calculations',
+    description='A package to efficiently run batches of similar calculations',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     url='https://github.com/BrechtBa/batchpy',
     author='Brecht Baeten',
