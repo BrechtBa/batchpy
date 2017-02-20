@@ -40,8 +40,6 @@ batch.add_factorial_runs( example_run,
                           'B': [[2,5,8],[1,9,6,3,9],[6,4,0,9,4,1]],
                           'operator': [min,max,sum,len]})
                           
-print([run.done for run in batch.run])
-
 
 
 ################################################################################
@@ -55,6 +53,8 @@ batch()
 # Add another run and run again
 ################################################################################
 batch.add_run( example_run,{'A':8,'operator':min})
+
+print([run.done for run in batch.run])
 
 # only the last run will computed as the other results are already available
 batch()
