@@ -152,6 +152,8 @@ class Batch(object):
             r = run.ResultRun(self,id)
             self.run.append(r)
             
+            # set the run index
+            r.index = self.run.index(r)
             
     def get_runs_with(self,**kwargs):
         """
