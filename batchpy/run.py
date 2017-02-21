@@ -22,6 +22,7 @@ import hashlib
 import types
 import inspect
 import time
+
 import numpy as np
 
 class Run(object):
@@ -188,18 +189,6 @@ class Run(object):
         return os.path.join(self.batch.savepath() , '{}_{}.npy'.format(self.batch.name,self.id))
         
         
-    def _save(self,res):
-        """
-        Saves the result in res
-        
-        Parameters
-        ----------
-        res : dict
-            The result dictionary
-        """
-        np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': {key:self._serialize(val) for key,val in self.parameters.items()}})
-
-        
     def load(self):
         """
         Checks if the run results are already computed and return them if so.
@@ -221,9 +210,10 @@ class Run(object):
         
         """
         
-        try:
-            if self._saveresult:
-                data = np.load(self._filename()).item()
+        if self._saveresult:
+            data = self._load()
+            
+            if not data is None:
                 res = data['res']
                 
                 # if statement for compatibility with older saved runs
@@ -236,9 +226,10 @@ class Run(object):
                 
                 return res
             else:
-                return self._result
-        except:
-            return None
+                raise Exception('Result not found, no file with filename: {}'.format(self._filename()))
+                
+        else:
+            return self._result
             
             
     def clear(self):
@@ -263,16 +254,45 @@ class Run(object):
             self.done = False
             return True
         except:
-            return False
+            return False  
             
             
-    def _serialize(self,par):
+    def _save(self,res):
+        """
+        Saves the result in res
+        
+        Parameters
+        ----------
+        res : dict
+            The result dictionary
+        """
+        
+        parameters = {key:self._serialize(val) for key,val in self.parameters.items()}
+        np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': parameters})
+        
+        
+    def _load(self):    
+        """
+        Loads all data from the file with the correct id if it exists, returns
+        None otherwise
+        
+        """
+        
+        data = None
+
+        if os.path.isfile(self._filename()):
+            data = np.load(self._filename()).item()
+    
+        return data
+         
+            
+    def _serialize(self,val):
         """
         Serialize a parameter
         
         Parameters
         ----------
-        par : anything
+        val : anything
             a dictionary
             
         Notes
@@ -299,23 +319,23 @@ class Run(object):
         ]
         
         
-        if isinstance(par,types.CodeType):
-            serialized = par.co_code
-        elif isinstance(par,types.FileType):
-            serialized = par.name
+        if isinstance(val,types.CodeType):
+            serialized = val.co_code
+        elif isinstance(val,types.FileType):
+            serialized = val.name
         else:
             for t in nametypes:
-                if isinstance(par,t):
-                    serialized = par.__name__
+                if isinstance(val,t):
+                    serialized = val.__name__
                     break
                     
             if serialized == '__unhashable__':
-                string = str(par)
+                string = str(val)
                 if len(string)>0 and string[0]=='<' and string[-1]=='>' and 'at 0x' in string:
-                    print('WARNING: parameter {} can not be hashed and is not included in the id which could lead to loss of data and undesired results'.format(par) )
+                    print('WARNING: parameter {} can not be hashed and is not included in the id which could lead to loss of data and undesired results'.format(val) )
                 else:
-                    serialized = par
-                    
+                    serialized = val
+        
         return serialized
         
         
@@ -401,9 +421,9 @@ class ResultRun(Run):
         
         self.id = id
         
-        if os.path.isfile(self._filename()):
-            data = np.load(self._filename()).item()
-            
+        
+        data = self._load() 
+        if not data is None:    
             if 'parameters' in data:
                 self.parameters = data['parameters']
             else:
