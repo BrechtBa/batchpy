@@ -311,7 +311,7 @@ class Run(object):
                     
             if serialized == '__unhashable__':
                 string = str(par)
-                if string[0]=='<' and string[-1]=='>' and 'at 0x' in string:
+                if len(string)>0 and string[0]=='<' and string[-1]=='>' and 'at 0x' in string:
                     print('WARNING: parameter {} can not be hashed and is not included in the id which could lead to loss of data and undesired results'.format(par) )
                 else:
                     serialized = par
