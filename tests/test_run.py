@@ -75,7 +75,7 @@ class TestRun(unittest.TestCase):
         
         res = testinstance()
 
-        res = testinstance.load()
+        res = testinstance.result
         self.assertEqual(res,{'a':range(100),'b':[],'c':np.mean(range(100))})
     
     
@@ -88,7 +88,7 @@ class TestRun(unittest.TestCase):
         testinstance = testclass(batch,saveresult=True,A=100,C=rms)
         
         res = testinstance()
-        res = testinstance.load()
+        res = testinstance.result
         
         self.assertEqual(res,{'a':range(100),'b':[],'c':rms(range(100))})
 

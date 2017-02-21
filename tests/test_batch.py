@@ -99,10 +99,10 @@ class TestBatch(unittest.TestCase):
         batch.add_run(testclass,{'A':20})
         batch(verbose=0)
         
-        res = batch.run[0].load()
+        res = batch.run[0].result
         self.assertEqual(res,{'a':range(10),'b':[],'c':np.mean(range(10))})
         
-        res = batch.run[1].load()
+        res = batch.run[1].result
         self.assertEqual(res,{'a':range(20),'b':[],'c':np.mean(range(20))})
         
         
@@ -151,10 +151,10 @@ class TestBatch(unittest.TestCase):
         batch.add_run(testclass,{'A':1000})
         batch.add_run(testclass,{'A':2000})
         
-        res = batch.run[0].load()
+        res = batch.run[0].result
         self.assertEqual(res,{'a':range(1000),'b':[],'c':np.mean(range(1000))})
         
-        res = batch.run[1].load()
+        res = batch.run[1].result
         self.assertEqual(res,{'a':range(2000),'b':[],'c':np.mean(range(2000))})
         
         
@@ -173,10 +173,10 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_resultrun(ids)
         
-        res = batch.run[0].load()
+        res = batch.run[0].result
         self.assertEqual(res,{'a':range(1000),'b':[],'c':np.mean(range(1000))})
         
-        res = batch.run[1].load()
+        res = batch.run[1].result
         self.assertEqual(res,{'a':range(2000),'b':[],'c':np.mean(range(2000))})
         
         
@@ -206,10 +206,10 @@ class TestBatch(unittest.TestCase):
         self.assertEqual(batch.run[0].parameters,{'A':1000,'B':[],'C':'rms'})
         self.assertEqual(batch.run[1].parameters,{'A':2000,'B':[],'C':'rms'})
         
-        res = batch.run[0].load()
+        res = batch.run[0].result
         self.assertEqual(res,{'a':range(1000),'b':[],'c':rms0})
         
-        res = batch.run[1].load()
+        res = batch.run[1].result
         self.assertEqual(res,{'a':range(2000),'b':[],'c':rms1})   
         
         
@@ -232,6 +232,18 @@ class TestBatch(unittest.TestCase):
         self.assertEqual(len(runs),1)
         
         
+    def test_save_ids(self):
+        clear_res()
+        
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(testclass,{'A':1000})
+        batch.add_run(testclass,{'A':2000})
+        old_ids = [run.id for run in batch.run]
+        
+        batch.save_ids()
+
+        from _res.testbatch_ids import ids
+        self.assertEqual(ids,old_ids)
         
 if __name__ == '__main__':
     unittest.main()

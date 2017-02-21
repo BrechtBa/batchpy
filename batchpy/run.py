@@ -75,29 +75,29 @@ class Run(object):
         """
         
         self.batch = batch
-        self.index = None
+        self.id = None
+        self.done = False
         self.runtime = None
         self._saveresult = saveresult
         self._result = None
-        
+
         
         # get the parameters from the run function
         self._resultonly = False
-        self.parameters = {}
+        self._parameters = {}
         a = inspect.getargspec(self.run)
         for key,val in zip(a.args[-len(a.defaults):],a.defaults):
-            self.parameters[key] = val
+            self._parameters[key] = val
         
         for key,val in parameters.iteritems():
-            self.parameters[key] = val
+            self._parameters[key] = val
         
         
         # create the run id
-        self.set_id(self.parameters)
-            
-            
+        self.set_id(self._parameters)
+             
         # check if there is a result saved
-        self.check_result()
+        self._check_result()
 
         
     def run(self):
@@ -129,16 +129,17 @@ class Run(object):
         """
 
         return {}
-        
+    
+    
     def __call__(self):
         """
-        Checks if the run results are allready computed and compute them if not.
+        Checks if the run results are already computed and compute them if not.
         
         When a run is called the class checks if the results are available in
         memory or on the disk.
         
-        When the result is available in memory, it is
-        returned. When it is available on disk, it is loaded and returned.
+        When the result is available in memory, it is returned. When it is
+        available on disk, it is loaded and returned.
         
         When the result is not available it is computed using the :code:`run`
         method and the results are stored on disk (if the :code:`_saveresult`
@@ -149,8 +150,8 @@ class Run(object):
   
         Returns
         -------
-        res : dict
-            results dictionary
+        res : anything
+            Results
             
         Examples
         --------
@@ -174,21 +175,51 @@ class Run(object):
             
             self.done = True
         else:
-            if self._saveresult:
-                res = self.load()
-            else:
-                res = self._result
+            res = self.load()
+
         return res
         
         
-    def _filename(self):
+    def set_id(self,parameters):
         """
-        Returns the filename of the run
+        Creates an id hash from the parameters
+        
+        The id hash is used to identify a run. It is hashed from the parameters
+        used to create the run to ensure that when even a single parameter is
+        changed the run ids are different. The id is stored in the :code`id`
+        attribute.
+        
+        Parameters
+        ----------
+        parameters : dict
+            a dictionary with parameters from which to compute the hash
+        
+        Returns
+        -------
+        id : string
+            the id hash of this run
+
+        Notes
+        -----
+        When classes, methods or functions are supplied as parameters, the hash
+        is created using their name attribute. This avoids ids being different
+        when python is restarted. A hash created from the function itself would 
+        be different each time python starts as the object resides in a
+        different memory location.
+        
+        Examples
+        --------
+        >>> run.set_id(run.parameters)
+        '10ae24979c5028fa873651bca338152dc0484245'
         
         """
-        return os.path.join(self.batch.savepath() , '{}_{}.npy'.format(self.batch.name,self.id))
         
+        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
         
+        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+        return self.id
+    
+    
     def load(self):
         """
         Checks if the run results are already computed and return them if so.
@@ -199,9 +230,8 @@ class Run(object):
         
         Returns
         -------
-        res : dict, :code:`None`
-            results dictionary. return :code:`None` if the results are not
-            available
+        res : anything, :code:`None`
+            Results, returns :code:`None` if the results are not available
 
         Examples
         --------
@@ -212,21 +242,18 @@ class Run(object):
         
         if self._saveresult:
             data = self._load()
+            res = data['res']
             
-            if not data is None:
-                res = data['res']
+            # if statement for compatibility with older saved runs
+            if 'runtime' in data:
+                self.runtime = data['runtime']
+            
+            if not 'parameters' in data:
+                print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
                 
-                # if statement for compatibility with older saved runs
-                if 'runtime' in data:
-                    self.runtime = data['runtime']
-                
-                if not 'parameters' in data:
-                    print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
-                    
-                
-                return res
-            else:
-                raise Exception('Result not found, no file with filename: {}'.format(self._filename()))
+            
+            return res
+            
                 
         else:
             return self._result
@@ -250,16 +277,54 @@ class Run(object):
         """
         
         try:
-            os.remove(self._filename())
+            os.remove(self.filename)
             self.done = False
             return True
         except:
             return False  
-            
-            
+         
+         
+    @property
+    def parameters(self):
+        """
+        Alias to self.load()
+        
+        """
+
+        return self._parameters
+
+        
+    @property
+    def result(self):
+        """
+        Alias to self.load()
+        
+        """
+
+        return self.load()
+
+        
+    @property
+    def index(self):
+        """
+        Returns the run index in its batch
+        
+        """
+        return self.batch.run.index(self)
+        
+        
+    @property
+    def filename(self):
+        """
+        Returns the filename of the run
+        
+        """
+        return os.path.join(self.batch.savepath , '{}_{}.npy'.format(self.batch.name,self.id))
+        
+        
     def _save(self,res):
         """
-        Saves the result in res
+        Saves the result in res along with run identifiers
         
         Parameters
         ----------
@@ -268,7 +333,7 @@ class Run(object):
         """
         
         parameters = {key:self._serialize(val) for key,val in self.parameters.items()}
-        np.save(self._filename(),{'res':res,'id':self.id,'runtime':self.runtime,'parameters': parameters})
+        np.save(self.filename,{'res':res,'id':self.id,'runtime':self.runtime,'parameters': parameters})
         
         
     def _load(self):    
@@ -278,13 +343,12 @@ class Run(object):
         
         """
         
-        data = None
+        if os.path.isfile(self.filename):
+            data = np.load(self.filename).item()
+            return data
+        else:
+            raise Exception('Result not found, no file with filename: {}'.format(self.filename))
 
-        if os.path.isfile(self._filename()):
-            data = np.load(self._filename()).item()
-    
-        return data
-         
             
     def _serialize(self,val):
         """
@@ -337,48 +401,9 @@ class Run(object):
                     serialized = val
         
         return serialized
-        
-        
-    def set_id(self,parameters):
-        """
-        Creates an id hash from the parameters
-        
-        The id hash is used to identify a run. It is hashed from the parameters
-        used to create the run to ensure that when even a single parameter is
-        changed the run ids are different. The id is stored in the :code`id`
-        attribute.
-        
-        Parameters
-        ----------
-        parameters : dict
-            a dictionary with parameters from which to compute the hash
-        
-        Returns
-        -------
-        id : string
-            the id hash of this run
+ 
 
-        Notes
-        -----
-        When classes, methods or functions are supplied as parameters, the hash
-        is created using their name attribute. This avoids ids being different
-        when python is restarted. A hash created from the function itself would 
-        be different each time python starts as the object resides in a
-        different memory location.
-        
-        Examples
-        --------
-        >>> run.set_id(run.parameters)
-        '10ae24979c5028fa873651bca338152dc0484245'
-        
-        """
-        
-        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
-        
-        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
-        return self.id
-    
-    def check_result(self):
+    def _check_result(self):
         """
         Checks if a result file is stored on the disk
        
@@ -388,14 +413,14 @@ class Run(object):
         
         Examples
         --------
-        >>> run.check_result()
+        >>> run._check_result()
         >>> run.done
         False
         
         """
         
         # check if there are results saved with the same id
-        if os.path.isfile(self._filename()):
+        if os.path.isfile(self.filename):
             self.done = True
         else:
             self.done = False
@@ -412,29 +437,37 @@ class ResultRun(Run):
         
         
         self.batch = batch
-        self.index = None
         self.runtime = None
-        self._saveresult = True
         self.done = True
+        self._parameters = None
+        self._saveresult = True
         self._result = None
-        
         
         self.id = id
         
         
         data = self._load() 
-        if not data is None:    
-            if 'parameters' in data:
-                self.parameters = data['parameters']
-            else:
-                self.parameters = None
+        if 'runtime' in data:
+            self.runtime = data['runtime']
             
-            del data
-        else:
-            raise Exception('Result not found, no file with filename: {}'.format(self._filename()))
+        if 'parameters' in data:
+            self._parameters = data['parameters']
+            
+        del data
+    
+    
+    def run(self,**kwargs): 
+        pass
         
-  
+    def __call__(self):
+        self.done = True
+        super(ResultRun,self).__call__()
         
+    def _save(self):
+        pass
+           
+    def clear(self):
+        pass
         
         
 def convert_run_to_newstyle(run):

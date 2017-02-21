@@ -70,6 +70,7 @@ class Batch(object):
         self.run = []
         self._saveresult = saveresult
         
+        
     def add_run(self,runclass,parameters):
         """
         Adds a run
@@ -96,9 +97,6 @@ class Batch(object):
         
         run = runclass(self,saveresult=self._saveresult,**parameters)
         self.run.append(run)
-        
-        # set the run index
-        run.index = self.run.index(run)
         
         
     def add_factorial_runs(self,runclass,parameters):
@@ -135,25 +133,24 @@ class Batch(object):
             par = {key:val for key,val in zip(parameters.keys(),vals)}
             self.add_run( runclass,par )
             
-    def add_resultrun(self,ids):
+            
+    def add_resultrun(self,id):
         """
         Adds saved runs by id
         
         Parameters
         ----------
-        ids : string or list of strings
+        id : string or list of strings
             
         """
         
-        if not hasattr(ids,'__iter__'):
-            ids = [ids]
+        if not hasattr(id,'__iter__'):
+            ids = [id]
         
-        for id in ids:
-            r = run.ResultRun(self,id)
+        for idi in id:
+            r = run.ResultRun(self,idi)
             self.run.append(r)
             
-            # set the run index
-            r.index = self.run.index(r)
             
     def get_runs_with(self,**kwargs):
         """
@@ -302,6 +299,32 @@ class Batch(object):
             print('done')
             sys.stdout.flush()
         
+        
+    def save_ids(self,filename=None):
+        """
+        Saves all ids in the batch to a python file with an ``ids`` list
+        
+        Parameters
+        ----------
+        filename : str
+            The filename of the output file. If no filename is supplied a
+            file is created in the ``_res`` folder, named ``batchname_ids.py``
+             
+        """
+        
+        if filename is None:
+            filename = os.path.join( self.savepath, '{}_ids.py'.format(self.name) )
+        
+        with open(filename,'w') as f:
+            
+            f.write('ids = [\n')
+            for run in self.run:
+                f.write('    \'{}\',\n'.format(run.id))
+                
+            f.write(']')
+
+            
+    @property     
     def savepath(self):
         """
         Returns the path where files are saved
@@ -312,20 +335,26 @@ class Batch(object):
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
         
+        if not os.path.exists(os.path.join(dirname,'__init__.py')):
+            with open(os.path.join(dirname,'__init__.py'),'w') as f:
+                pass
+        
         return dirname
     
+        
     def _get_filenames(self):
         """
         Returns a list of found files which correspond to the batch
         """
         
-        dirname = self.savepath()
+        dirname = self.savepath
         filenames = []
         files = [f for f in os.listdir(dirname) if re.match(self.name+r'_run.*\.npy', f)]
         for f in files:
             filenames.append( os.path.join(dirname , f) )
                 
         return filenames
+    
     
 # helper functions
 def strlist(runs):
