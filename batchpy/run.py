@@ -242,18 +242,21 @@ class Run(object):
         
         if self._saveresult:
             data = self._load()
-            res = data['res']
             
-            # if statement for compatibility with older saved runs
-            if 'runtime' in data:
-                self.runtime = data['runtime']
-            
-            if not 'parameters' in data:
-                print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
+            if not data is None:
+                res = data['res']
                 
-            
-            return res
-            
+                # if statement for compatibility with older saved runs
+                if 'runtime' in data:
+                    self.runtime = data['runtime']
+                
+                if not 'parameters' in data:
+                    print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
+                
+                return res
+                
+            else:
+                return None
                 
         else:
             return self._result
@@ -343,12 +346,13 @@ class Run(object):
         
         """
         
+        data = None
         if os.path.isfile(self.filename):
             data = np.load(self.filename).item()
-            return data
-        else:
-            raise Exception('Result not found, no file with filename: {}'.format(self.filename))
-
+        
+        
+        return data
+        
             
     def _serialize(self,val):
         """
@@ -446,14 +450,15 @@ class ResultRun(Run):
         self.id = id
         
         
-        data = self._load() 
-        if 'runtime' in data:
-            self.runtime = data['runtime']
-            
-        if 'parameters' in data:
-            self._parameters = data['parameters']
-            
-        del data
+        data = self._load()
+        if not data is None:
+            if 'runtime' in data:
+                self.runtime = data['runtime']
+                
+            if 'parameters' in data:
+                self._parameters = data['parameters']
+                
+            del data
     
     
     def run(self,**kwargs): 
