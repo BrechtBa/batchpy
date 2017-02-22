@@ -131,6 +131,7 @@ todo_include_todos = False
 # numpydoc options
 numpydoc_show_class_members = False
 
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -361,3 +362,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+
+# -- Options for autodoc --------------------------------------------------
+autodoc_member_order = 'bysource'

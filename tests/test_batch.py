@@ -231,7 +231,6 @@ class TestBatch(unittest.TestCase):
         self.assertIn(batch.run[1],runs)
         self.assertEqual(len(runs),1)
         
-        
     def test_save_ids(self):
         clear_res()
         
@@ -241,6 +240,20 @@ class TestBatch(unittest.TestCase):
         old_ids = [run.id for run in batch.run]
         
         batch.save_ids()
+
+        ids = list(np.load('_res/testbatch_ids.npy'))
+
+        self.assertEqual(ids,old_ids)
+        
+    def test_save_ids_py(self):
+        clear_res()
+        
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(testclass,{'A':1000})
+        batch.add_run(testclass,{'A':2000})
+        old_ids = [run.id for run in batch.run]
+        
+        batch.save_ids(format='py')
 
         from _res.testbatch_ids import ids
         self.assertEqual(ids,old_ids)

@@ -39,28 +39,29 @@ class Batch(object):
     computations which would require more memory then available if all runs were
     to be executed at once.
     
+    Parameters
+    ----------
+    name : string
+        A name for the batch
+        
+    path : string, optional
+        A optional path to store results, if not provided the current path is
+        chosen.
+        
+    saveresult : boolean, optional
+        Save the results to disk or not, this argument is passed to all runs.
+            
+    Examples
+    --------
+    >>> batch = batchpy.Batch('mybatch')
+        
     """
     
     def __init__(self,name,path='',saveresult=True):
         """
-        creates a batch
+        Creates a batch
         
-        Parameters
-        ----------
-        name : string
-            A name for the batch
-            
-        path : string
-            A optional path to store results, if not provided the current
-            path is chosen
-            
-        saveresult : boolean
-            Save the results to disk or not, this argument is passed to all
-            runs
-                
-        Examples
-        --------
-        >>> batch = batchpy.Batch('mybatch',path='res')
+        See above
         
         """
         
@@ -77,21 +78,18 @@ class Batch(object):
         
         Parameters
         ----------
-        runclass : class
+        runclass : :py:meth:`~batchpy.run.Run` subclass
             A class reference which creates an object when supplied the
-            parameters
+            parameters.
             
         parameters : dict
-            A dictionary of parameters to be supplied to the init function of
-            the runclass
+            A dictionary of parameters to be supplied to the
+            :py:meth:`~batchpy.run.Run.run` method of the runclass.
         
         Examples
         --------
-        >>> batch.add_run(Cal,{'A':1,'B':[1,2,3],'C':'spam'})
+        >>> batch.add_run(Myrun,{'A':1,'B':[1,2,3],'C':'spam'})
         >>> batch()
-        
-        # will run cal() and store the return of cal() in batch.res[] after completion
-        # the run will be assigned an id according to cal.id
         
         """
         
@@ -101,29 +99,29 @@ class Batch(object):
         
     def add_factorial_runs(self,runclass,parameters):
         """
-        Adds runs 
+        Adds a full factorial design of runs based on parameter lists
         
         Parameters
         ----------
-        runclass : class
+        runclass : :py:meth:`batchpy.run.Run` subclass
             A class reference which creates an object when supplied the
-            parameters
+            parameters.
         
         parameters : dict
-            A dictionary of lists of parameters to be supplied to the init
-            function of the runclass
+            A dictionary of lists of parameters to be supplied to the
+            :py:meth:`~batchpy.run.Run.run` method of the runclass.
         
         Examples
         --------
-        >>> batch.add_factorial_runs(Cal,{'par1':[0,1,2],'par2':[5.0,7.1]})
-        
-        # is equivalent with:
-        >>> batch.add_run(Cal(par1=0,par2=5.0))
-        >>> batch.add_run(Cal(par1=0,par2=7.1))
-        >>> batch.add_run(Cal(par1=1,par2=5.0))
-        >>> batch.add_run(Cal(par1=1,par2=7.1))
-        >>> batch.add_run(Cal(par1=2,par2=5.0))
-        >>> batch.add_run(Cal(par1=2,par2=7.1))
+        >>> batch.add_factorial_runs(Myrun,{'par1':[0,1,2],'par2':[5.0,7.1]})
+        >>> 
+        >>> # is equivalent with:
+        >>> batch.add_run(Myrun,{par1:0,par2:5.0})
+        >>> batch.add_run(Myrun,{par1:0,par2:7.1})
+        >>> batch.add_run(Myrun,{par1:1,par2:5.0})
+        >>> batch.add_run(Myrun,{par1:1,par2:7.1})
+        >>> batch.add_run(Myrun,{par1:2,par2:5.0})
+        >>> batch.add_run(Myrun,{par1:2,par2:7.1})
         
         """
         
@@ -141,7 +139,12 @@ class Batch(object):
         Parameters
         ----------
         id : string or list of strings
+            The id of the run.
             
+        Examples
+        --------
+        >>> batch.add_resultrun('3ecc784a9d5cf26eb6420de2a43f04b310073925')
+        
         """
         
         if not hasattr(id,'__iter__'):
@@ -158,16 +161,27 @@ class Batch(object):
         
         Parameters
         ----------
-        key=value pairs of parameters
+        kwargs : anything
+            Keyword arguments of parameter values .
+            Several conditions can be appended to a parameter:
+            `__eq`: equal, same as appending nothing
+            `__ne`: not equal
+            `__ge`: greater or equal
+            `__le`: less or equal
         
-        Several conditions can be appended to a parameter:
-        `__eq`: equal, same as appending nothing
-        `__ne`: not equal
-        `__ge`: greater or equal
-        `__le`: less or equal
-        
-        Example
+        Returns
         -------
+        runs : list
+            a list of runs
+        
+        Examples
+        --------
+        >>> batch = batchpy.Batch('mybatch')
+        >>> batch.add_factorial_runs(Myrun,{'par1':[0,1,2],'par2':[5.0,7.1]})
+        >>> runs = batch.get_runs_with(par1=0)
+        >>> print(runs)
+        >>> runs = batch.get_runs_with(par1__ge=1,par2=5.0)
+        >>> print(runs)
         
         """
         
@@ -232,13 +246,14 @@ class Batch(object):
         
         Parameters
         ----------
-        runs : int or list of ints
+        runs : int or list of ints, optional
             Indices of the runs to be executed, -1 for all runs
         
-        verbose : int
+        verbose : int, optional
             Integer determining the amount of printed output 0/1/2
             
         """
+        
         title_width = 80
         
         # check which runs are to be done
@@ -300,34 +315,63 @@ class Batch(object):
             sys.stdout.flush()
         
         
-    def save_ids(self,filename=None):
+    def save_ids(self,filename=None,format='npy'):
         """
         Saves all ids in the batch to a python file with an ``ids`` list
         
         Parameters
         ----------
-        filename : str
+        filename : str, optional
             The filename of the output file. If no filename is supplied a
-            file is created in the ``_res`` folder, named ``batchname_ids.py``
-             
+            file is created in the ``_res`` folder, named ``batchname_ids.npy``
+            or ``batchname_ids.py`` depending on the format argument.
+            If a filename is supplied, the format argument is ignored and the
+            filename extension is used to determine the format. 
+        
+        format : str, optional
+            The format to save the ids to, 'npy'/'py'. By default, a .npy file
+            is created, the ids can be retrieved with
+            ``ids = np.load('batchname_ids.npy')``. If the 'py' format is
+            supplied the ids are written to a python file in a list.
+            
+        Examples
+        --------
+        >>> batch.save_ids()
+        
+        In another interpreter:
+        
+        >>> import numpy as np
+        >>> ids = np.load('_res/mybatch_ids.npy')
+        >>> print(ids)
+        
         """
         
         if filename is None:
-            filename = os.path.join( self.savepath, '{}_ids.py'.format(self.name) )
+            filename = os.path.join( self.savepath, '{}_ids.{}'.format(self.name,format) )
+        else:
+            format = os.path.splitext(filename)[1][1:]
         
-        with open(filename,'w') as f:
+        
+        if format == 'npy':
+            np.save(filename,[run.id for run in self.run])
             
-            f.write('ids = [\n')
-            for run in self.run:
-                f.write('    \'{}\',\n'.format(run.id))
+        elif format == 'py':
+            with open(filename,'w') as f:
                 
-            f.write(']')
-
+                f.write('ids = [\n')
+                for run in self.run:
+                    f.write('    \'{}\',\n'.format(run.id))
+                    
+                f.write(']')
+        else:
+            raise Exception('Format \'{}\' not recognized, should be \'npy\' or \'py\'.'.format(format))
+            
             
     @property     
     def savepath(self):
         """
-        Returns the path where files are saved
+        Property returning the path where files are saved
+        
         """
         dirname = os.path.join(self.path, '_res' )
         filename = os.path.join(dirname , self.name )

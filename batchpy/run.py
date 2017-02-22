@@ -31,20 +31,40 @@ class Run(object):
     
     This class is intended as a base class from which custom user defined run
     objects can inherit.
-    In the custom run class the :code:`run` method needs to be redefined to
-    actually run the wanted computations and return the result as a dictionary.
+    In the custom run class the :py:meth:`~batchpy.run.Run.run` method needs to
+    be redefined to actually run the wanted computations and return the result
+    as a dictionary.
     
+    Parameters
+    ----------
+    batch : :py:meth:`~batchpy.batch.Batch` object
+        The batch the run belongs to
+        
+    saveresult : boolean, optional
+        Save the results to disk or not, if not the result is available
+        in the _result attribute
+        
+    **parameters : 
+        Keyword parameters which modify the run instance
+       
+    Notes
+    -----
+    Batchpy runs should not be created directly but through the batch methods
+    :py:meth:`~batchpy.batch.Batch.add_run` or 
+    :py:meth:`~batchpy.batch.Batch.add_factorial_runs`.
+        
     Examples
     --------
-    >>> class myrun(batchpy.Run):
+    >>> class Myrun(batchpy.Run):
     ...     def run(self,mypar=5):
     ...         # some conplicated computation
     ...         return {'val': 2*mypar}
     ...
     >>> batch = batchpy.Batch('mybatch')
-    >>> run = myrun(batch,saveresult=False,mypar=5)
+    >>> run = Myrun(batch,saveresult=False,mypar=5)
     >>> run()
     {'val': 10}
+    >>> 
     
     """
     
@@ -52,26 +72,8 @@ class Run(object):
         """
         Creates a batchpy run
         
-        Parameters
-        ----------
-        batch : batch
-            the batch the run belongs to
-            
-        saveresult : boolean
-            save the results to disk or not, if not the result is available
-            in the _result attribute
-            
-        **parameters : 
-            keyword parameters which modify the run instance
-           
-        Notes
-        -----
-        batchpy runs should not be created directly
+        See above
         
-        Examples
-        --------
-        >>> batch = batchpy.Batch('mybatch')
-        >>> run = myrun(batch,saveresult=False,mypar=5)
         """
         
         self.batch = batch
@@ -110,8 +112,8 @@ class Run(object):
         Parameters
         ----------
         parameters
-            parameters can be defined as named parameters. The use of **kwargs is
-            not supported.
+            parameters can be defined as named parameters. The use of
+            ``**kwargs`` is not supported.
         
         Returns
         -------
@@ -120,7 +122,7 @@ class Run(object):
             
         Examples
         --------
-        >>> class myrun(batchpy.Run):
+        >>> class Myrun(batchpy.Run):
         ...     def run(self,mypar=5):
         ...         # some conplicated computation
         ...         return {'val': 2*mypar}
@@ -151,10 +153,12 @@ class Run(object):
         Returns
         -------
         res : anything
-            Results
+            Results.
             
         Examples
         --------
+        >>> batch = batchpy.Batch('mybatch')
+        >>> run = Myrun(batch,saveresult=False,mypar=5)
         >>> run()
         {'val': 10}
         
@@ -178,46 +182,6 @@ class Run(object):
             res = self.load()
 
         return res
-        
-        
-    def set_id(self,parameters):
-        """
-        Creates an id hash from the parameters
-        
-        The id hash is used to identify a run. It is hashed from the parameters
-        used to create the run to ensure that when even a single parameter is
-        changed the run ids are different. The id is stored in the :code`id`
-        attribute.
-        
-        Parameters
-        ----------
-        parameters : dict
-            a dictionary with parameters from which to compute the hash
-        
-        Returns
-        -------
-        id : string
-            the id hash of this run
-
-        Notes
-        -----
-        When classes, methods or functions are supplied as parameters, the hash
-        is created using their name attribute. This avoids ids being different
-        when python is restarted. A hash created from the function itself would 
-        be different each time python starts as the object resides in a
-        different memory location.
-        
-        Examples
-        --------
-        >>> run.set_id(run.parameters)
-        '10ae24979c5028fa873651bca338152dc0484245'
-        
-        """
-        
-        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
-        
-        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
-        return self.id
     
     
     def load(self):
@@ -226,12 +190,12 @@ class Run(object):
         
         When the result is available in memory, it is
         returned. When it is available on disk, it is loaded and returned.
-        When the result is not computed yet this returns :code:`None`
+        When the result is not computed yet this returns :code:`None`.
         
         Returns
         -------
         res : anything, :code:`None`
-            Results, returns :code:`None` if the results are not available
+            Results, returns :code:`None` if the results are not available.
 
         Examples
         --------
@@ -270,7 +234,7 @@ class Run(object):
         -------
         success : bool
             :code:`True` if the run was deleted from the disk, :code:`False`
-            otherwise
+            otherwise.
 
         Examples
         --------
@@ -290,7 +254,7 @@ class Run(object):
     @property
     def parameters(self):
         """
-        Alias to self.load()
+        Property returning the run parameters.
         
         """
 
@@ -300,7 +264,7 @@ class Run(object):
     @property
     def result(self):
         """
-        Alias to self.load()
+        Property alias to self.load().
         
         """
 
@@ -310,7 +274,7 @@ class Run(object):
     @property
     def index(self):
         """
-        Returns the run index in its batch
+        Property returning the run index in its batch.
         
         """
         return self.batch.run.index(self)
@@ -319,15 +283,54 @@ class Run(object):
     @property
     def filename(self):
         """
-        Returns the filename of the run
+        Property returning the filename of the run.
         
         """
         return os.path.join(self.batch.savepath , '{}_{}.npy'.format(self.batch.name,self.id))
         
+    def set_id(self,parameters):
+        """
+        Creates an id hash from the parameters.
+        
+        The id hash is used to identify a run. It is hashed from the parameters
+        used to create the run to ensure that when even a single parameter is
+        changed the run ids are different. The id is stored in the :code`id`
+        attribute.
+        
+        Parameters
+        ----------
+        parameters : dict
+            a dictionary with parameters from which to compute the hash.
+        
+        Returns
+        -------
+        id : string
+            the id hash of this run
+
+        Notes
+        -----
+        When classes, methods or functions are supplied as parameters, the hash
+        is created using their name attribute. This avoids ids being different
+        when python is restarted. A hash created from the function itself would 
+        be different each time python starts as the object resides in a
+        different memory location.
+        
+        Examples
+        --------
+        >>> run.set_id(run.parameters)
+        '10ae24979c5028fa873651bca338152dc0484245'
+        
+        """
+        
+        id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
+        
+        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+        return self.id
+
         
     def _save(self,res):
         """
-        Saves the result in res along with run identifiers
+        Saves the result in res along with run identifiers.
         
         Parameters
         ----------
@@ -342,7 +345,7 @@ class Run(object):
     def _load(self):    
         """
         Loads all data from the file with the correct id if it exists, returns
-        None otherwise
+        None otherwise.
         
         """
         
@@ -356,7 +359,7 @@ class Run(object):
             
     def _serialize(self,val):
         """
-        Serialize a parameter
+        Serialize a parameter.
         
         Parameters
         ----------
@@ -366,7 +369,7 @@ class Run(object):
         Notes
         -----
         Not all parameter types are serializable. If a parameter can not be
-        serialized ``'__unserializable__'`` is returned
+        serialized ``'__unserializable__'`` is returned.
         
         """
         
@@ -433,12 +436,36 @@ class Run(object):
     
 class ResultRun(Run):
     """
-    A class to load run results
+    A class to load run results.
+    
+    Parameters
+    ----------
+    batch : :py:meth:`~batchpy.batch.Batch` object
+        The batch the run belongs to.
+          
+    id : str or list of str
+        An id or list of ids specifying previously saved runs.
+       
+    Notes
+    -----
+    Batchpy result runs should not be created directly but through the batch
+    methods :py:meth:`~batchpy.batch.Batch.add_resultrun`.
+
+        
+    Examples
+    --------
+    >>> batch = batchpy.Batch('mybatch')
+    >>> run = batchpy.ResultRun(batch,'3ecc784a9d5cf26eb6420de2a43f04b310073925')
     
     """
     
     def __init__(self,batch,id):
+        """
+        Creates a batchpy result run
         
+        See above
+        
+        """
         
         self.batch = batch
         self.runtime = None
@@ -477,12 +504,12 @@ class ResultRun(Run):
         
 def convert_run_to_newstyle(run):
     """
-    Converts a saved run result to include the parameters
+    Converts a saved run result to include the parameters.
     
     Parameters
     ----------
-    run : batchpy.Run object or child class
-        The run to convert the result from
+    run : :py:meth:`~batchpy.run.Run` object or child class
+        The run to convert the result from.
     """
     
     res = run.load()

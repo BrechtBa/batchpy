@@ -20,4 +20,4 @@ To install run::
 
 Usage
 -----
-The `quickstart <https://pythonhosted.org/batchpy/quickstart.html>`_. example in the online documentation gives a good overview of basic usage.
+The `quickstart <https://pythonhosted.org/batchpy/quickstart.html>`_ example in the online documentation gives a good overview of basic usage.

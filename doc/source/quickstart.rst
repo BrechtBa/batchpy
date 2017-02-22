@@ -164,7 +164,8 @@ The ``batchpy.batch`` object provides a method to write all ids of the batch to 
     resultbatch.save_ids()
     del resultbatch
     
-    from _res.example_ids import ids
+    import numpy as np
+    ids = np.load('_res/example_ids.npy')
     print(ids)
     
     resultbatch = batchpy.Batch('example')
