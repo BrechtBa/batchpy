@@ -77,9 +77,9 @@ class Run(object):
         """
         
         self.batch = batch
-        self.id = None
-        self.done = False
-        self.runtime = None
+        self._id = None
+        self._done = False
+        self._runtime = None
         self._saveresult = saveresult
         self._result = None
 
@@ -96,7 +96,7 @@ class Run(object):
         
         
         # create the run id
-        self.set_id(self._parameters)
+        self._id = self.generate_id(self._parameters)
              
         # check if there is a result saved
         self._check_result()
@@ -164,20 +164,20 @@ class Run(object):
         
         """
         
-        if not self.done:
+        if not self._done:
             t_start = time.time()
             
             res = self.run(**self.parameters)
             
             t_end = time.time()
-            self.runtime = t_end-t_start
+            self._runtime = t_end-t_start
             
             if self._saveresult:
                 self._save(res)
             else:
                 self._result = res
             
-            self.done = True
+            self._done = True
         else:
             res = self.load()
 
@@ -212,7 +212,7 @@ class Run(object):
                 
                 # if statement for compatibility with older saved runs
                 if 'runtime' in data:
-                    self.runtime = data['runtime']
+                    self._runtime = data['runtime']
                 
                 if not 'parameters' in data:
                     print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
@@ -245,12 +245,20 @@ class Run(object):
         
         try:
             os.remove(self.filename)
-            self.done = False
+            self._done = False
             return True
         except:
             return False  
          
-         
+    @property
+    def id(self):
+        """
+        Property returning the id.
+        
+        """
+
+        return self._id
+        
     @property
     def parameters(self):
         """
@@ -269,7 +277,31 @@ class Run(object):
         """
 
         return self.load()
+        
+        
+    @property
+    def done(self):
+        """
+        Property returning if the run is done or not.
+        
+        """
 
+        return self._done
+    
+    
+    @done.setter
+    def done(self,value):
+        self._done = value
+        
+    
+    @property
+    def runtime(self):
+        """
+        Property returning the computation time of a run
+        
+        """
+
+        return self._runtime
         
     @property
     def index(self):
@@ -286,11 +318,11 @@ class Run(object):
         Property returning the filename of the run.
         
         """
-        return os.path.join(self.batch.savepath , '{}_{}.npy'.format(self.batch.name,self.id))
+        return os.path.join(self.batch.savepath , '{}_{}.npy'.format(self.batch.name,self._id))
         
-    def set_id(self,parameters):
+    def generate_id(self,parameters):
         """
-        Creates an id hash from the parameters.
+        Generates an id hash from the parameters.
         
         The id hash is used to identify a run. It is hashed from the parameters
         used to create the run to ensure that when even a single parameter is
@@ -317,16 +349,15 @@ class Run(object):
         
         Examples
         --------
-        >>> run.set_id(run.parameters)
+        >>> run.generate_id(run.parameters)
         '10ae24979c5028fa873651bca338152dc0484245'
         
         """
         
         id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
         
-        self.id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
-        return self.id
-
+        id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+        return id
         
     def _save(self,res):
         """
@@ -339,7 +370,7 @@ class Run(object):
         """
         
         parameters = {key:self._serialize(val) for key,val in self.parameters.items()}
-        np.save(self.filename,{'res':res,'id':self.id,'runtime':self.runtime,'parameters': parameters})
+        np.save(self.filename,{'res':res,'id':self._id,'runtime':self._runtime,'parameters': parameters})
         
         
     def _load(self):    
@@ -428,9 +459,9 @@ class Run(object):
         
         # check if there are results saved with the same id
         if os.path.isfile(self.filename):
-            self.done = True
+            self._done = True
         else:
-            self.done = False
+            self._done = False
     
 
     
@@ -468,19 +499,19 @@ class ResultRun(Run):
         """
         
         self.batch = batch
-        self.runtime = None
-        self.done = True
+        self._runtime = None
+        self._done = True
         self._parameters = None
         self._saveresult = True
         self._result = None
         
-        self.id = id
+        self._id = id
         
         
         data = self._load()
         if not data is None:
             if 'runtime' in data:
-                self.runtime = data['runtime']
+                self._runtime = data['runtime']
                 
             if 'parameters' in data:
                 self._parameters = data['parameters']
@@ -492,7 +523,7 @@ class ResultRun(Run):
         pass
         
     def __call__(self):
-        self.done = True
+        self._done = True
         super(ResultRun,self).__call__()
         
     def _save(self):
