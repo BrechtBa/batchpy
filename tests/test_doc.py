@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import unittest
-import batchpy
-import python_git_package as pgp
-
+import os
+import subprocess
 
 class TestDoc(unittest.TestCase):
     
     def test_quickstart_example(self):
-        success = pgp.rstpy('../doc/source/quickstart.rst',output=False)
-        self.assertEqual(success,True)
-
+        fnull = open(os.devnull, 'w')
+        res = subprocess.call(['python', '../doc/source/examples/quickstart.py'],stdout=fnull)
+        self.assertEqual(res,0)
         
         
 if __name__ == '__main__':
