@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 
-from common import *
+from .common import *
 
 
 class TestBatch(unittest.TestCase):
@@ -50,12 +50,23 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
         
-        self.assertEqual(batch.run[0].parameters,{'A':1,'B':[1,2],'C':np.mean})
-        self.assertEqual(batch.run[1].parameters,{'A':1,'B':[3,4],'C':np.mean})
-        self.assertEqual(batch.run[2].parameters,{'A':2,'B':[1,2],'C':np.mean})
-        self.assertEqual(batch.run[3].parameters,{'A':2,'B':[3,4],'C':np.mean})
-        self.assertEqual(batch.run[4].parameters,{'A':3,'B':[1,2],'C':np.mean})
-        self.assertEqual(batch.run[5].parameters,{'A':3,'B':[3,4],'C':np.mean})
+        found = [False,]
+        runs = [
+            {'par':{'A':1,'B':[1,2],'C':np.mean}, 'found': False},
+            {'par':{'A':1,'B':[3,4],'C':np.mean}, 'found': False},
+            {'par':{'A':2,'B':[1,2],'C':np.mean}, 'found': False},
+            {'par':{'A':2,'B':[3,4],'C':np.mean}, 'found': False},
+            {'par':{'A':3,'B':[1,2],'C':np.mean}, 'found': False},
+            {'par':{'A':3,'B':[3,4],'C':np.mean}, 'found': False},
+        ]
+        for r in runs:
+            for run in batch.run:
+                if run.parameters == r['par']:
+                    r['found'] = True
+                    break
+                    
+        for r in runs:
+            self.assertTrue(r['found'])
 
         
     def test_get_runs_with_eq(self):  
@@ -63,9 +74,11 @@ class TestBatch(unittest.TestCase):
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
         
         runs = batch.get_runs_with(A=1)
-        self.assertIn(batch.run[0],runs)
-        self.assertIn(batch.run[1],runs)
-        self.assertEqual(len(runs),2)
+        for run in batch.run:
+            if run.parameters['A'] == 1:
+                self.assertIn(run,runs)
+            else:
+                self.assertNotIn(run,runs)
         
         
     def test_get_runs_with_ne(self):  
@@ -73,11 +86,11 @@ class TestBatch(unittest.TestCase):
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
         
         runs = batch.get_runs_with(A__ne=1)
-        self.assertIn(batch.run[2],runs)
-        self.assertIn(batch.run[3],runs)
-        self.assertIn(batch.run[4],runs)
-        self.assertIn(batch.run[5],runs)
-        self.assertEqual(len(runs),4)
+        for run in batch.run:
+            if run.parameters['A'] == 1:
+                self.assertNotIn(run,runs)
+            else:
+                self.assertIn(run,runs)
         
         
     def test_get_runs_with_ge_eq(self):  
@@ -85,10 +98,11 @@ class TestBatch(unittest.TestCase):
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
         
         runs = batch.get_runs_with(A__ge=2,B=[1,2])
-        self.assertIn(batch.run[2],runs)
-        self.assertIn(batch.run[4],runs)
-        self.assertEqual(len(runs),2)
-        
+        for run in batch.run:
+            if run.parameters['A'] >= 2 and run.parameters['B'] == [1,2]:
+                self.assertIn(run,runs)
+            else:
+                self.assertNotIn(run,runs)
         
     def test_run(self):
     
@@ -100,10 +114,10 @@ class TestBatch(unittest.TestCase):
         batch(verbose=0)
         
         res = batch.run[0].result
-        self.assertEqual(res,{'a':range(10),'b':[],'c':np.mean(range(10))})
+        self.assertEqual(res,{'a':list(range(10)),'b':[],'c':np.mean(list(range(10)))})
         
         res = batch.run[1].result
-        self.assertEqual(res,{'a':range(20),'b':[],'c':np.mean(range(20))})
+        self.assertEqual(res,{'a':list(range(20)),'b':[],'c':np.mean(list(range(20)))})
         
         
     def test_run_save(self):
@@ -152,10 +166,10 @@ class TestBatch(unittest.TestCase):
         batch.add_run(testclass,{'A':2000})
         
         res = batch.run[0].result
-        self.assertEqual(res,{'a':range(1000),'b':[],'c':np.mean(range(1000))})
+        self.assertEqual(res,{'a':list(range(1000)),'b':[],'c':np.mean(list(range(1000)))})
         
         res = batch.run[1].result
-        self.assertEqual(res,{'a':range(2000),'b':[],'c':np.mean(range(2000))})
+        self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':np.mean(list(range(2000)))})
         
         
     def test_add_resultrun(self):
@@ -174,10 +188,10 @@ class TestBatch(unittest.TestCase):
         batch.add_resultrun(ids)
         
         res = batch.run[0].result
-        self.assertEqual(res,{'a':range(1000),'b':[],'c':np.mean(range(1000))})
+        self.assertEqual(res,{'a':list(range(1000)),'b':[],'c':np.mean(list(range(1000)))})
         
         res = batch.run[1].result
-        self.assertEqual(res,{'a':range(2000),'b':[],'c':np.mean(range(2000))})
+        self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':np.mean(list(range(2000)))})
         
         
     def test_add_resultrun_function(self):
@@ -207,10 +221,10 @@ class TestBatch(unittest.TestCase):
         self.assertEqual(batch.run[1].parameters,{'A':2000,'B':[],'C':'rms'})
         
         res = batch.run[0].result
-        self.assertEqual(res,{'a':range(1000),'b':[],'c':rms0})
+        self.assertEqual(res,{'a':list(range(1000)),'b':[],'c':rms0})
         
         res = batch.run[1].result
-        self.assertEqual(res,{'a':range(2000),'b':[],'c':rms1})   
+        self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':rms1})   
         
         
     def test_get_runs_with_resultrun(self):  

@@ -4,7 +4,7 @@ import batchpy
 import numpy as np
 
 
-from common import *
+from .common import *
 
 
 class TestRun(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestRun(unittest.TestCase):
         
         res = testinstance()
         
-        self.assertEqual(res,{'a':range(100),'b':[],'c':np.mean(range(100))})
+        self.assertEqual(res,{'a':list(range(100)),'b':[],'c':np.mean(list(range(100)))})
     
     
     def test_run_load(self):
@@ -76,7 +76,7 @@ class TestRun(unittest.TestCase):
         res = testinstance()
 
         res = testinstance.result
-        self.assertEqual(res,{'a':range(100),'b':[],'c':np.mean(range(100))})
+        self.assertEqual(res,{'a':list(range(100)),'b':[],'c':np.mean(list(range(100)))})
     
     
     def test_run_load_function(self):
@@ -90,7 +90,7 @@ class TestRun(unittest.TestCase):
         res = testinstance()
         res = testinstance.result
         
-        self.assertEqual(res,{'a':range(100),'b':[],'c':rms(range(100))})
+        self.assertEqual(res,{'a':list(range(100)),'b':[],'c':rms(list(range(100)))})
 
         
         

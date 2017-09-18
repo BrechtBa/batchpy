@@ -2,4 +2,7 @@
 batchpy.egg-info
 build
 dist
+env
+_res
 *.zip
+

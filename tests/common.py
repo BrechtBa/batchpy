@@ -23,12 +23,13 @@ class testclass(batchpy.Run):
 # clear result folder
 def clear_res():
     folder = '_res'
-    for file in os.listdir(folder):
-        file_path = os.path.join(folder, file)
-        try:
+    try:
+        for file in os.listdir(folder):
+            file_path = os.path.join(folder, file)
+
             if os.path.isfile(file_path):
                 os.unlink(file_path)
            
-        except Exception, e:
-            print(e) 
+    except Exception as e:
+        print(e)
         

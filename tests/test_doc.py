@@ -7,7 +7,7 @@ class TestDoc(unittest.TestCase):
     
     def test_quickstart_example(self):
         fnull = open(os.devnull, 'w')
-        res = subprocess.call(['python', '../doc/source/examples/quickstart.py'],stdout=fnull)
+        res = subprocess.call(['python', 'doc/source/examples/quickstart.py'],stdout=fnull)
         self.assertEqual(res,0)
         
         

@@ -3,7 +3,7 @@ import unittest
 import batchpy
 
 
-from common import *
+from .common import *
 
 
 class TestVarious(unittest.TestCase):
@@ -26,10 +26,10 @@ class TestVarious(unittest.TestCase):
         batch.add_resultrun(ids)
         
         res = batch.run[0].load()
-        self.assertEqual(res,{'a':range(1000),'b':[],'c':np.mean(range(1000))})
+        self.assertEqual(res,{'a':list(range(1000)),'b':[],'c':np.mean(list(range(1000)))})
         
         res = batch.run[1].load()
-        self.assertEqual(res,{'a':range(2000),'b':[],'c':np.mean(range(2000))})
+        self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':np.mean(list(range(2000)))})
            
            
             

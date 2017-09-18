@@ -87,11 +87,20 @@ class Run(object):
         # get the parameters from the run function
         self._resultonly = False
         self._parameters = {}
-        a = inspect.getargspec(self.run)
-        for key,val in zip(a.args[-len(a.defaults):],a.defaults):
-            self._parameters[key] = val
         
-        for key,val in parameters.iteritems():
+        try:
+            a = inspect.signature(self.run)
+            
+            for n,p in a.parameters.items():
+                self._parameters[p.name] = p.default
+        
+        except:
+            a = inspect.getargspec(self.run)
+
+            for key,val in zip(a.args[-len(a.defaults):],a.defaults):
+                self._parameters[key] = val
+        
+        for key,val in parameters.items():
             self._parameters[key] = val
         
         
@@ -355,8 +364,12 @@ class Run(object):
         """
         
         id_dict = {key:self._serialize(val) for key,val in parameters.items() if not self._serialize(val) == '__unhashable__'}
-        
-        id = hashlib.sha1(str([ id_dict[key] for key in id_dict.keys() ])).hexdigest()
+
+        try:
+            id = hashlib.sha1(str(sorted([ str(id_dict[key]) for key in id_dict.keys() ]))).hexdigest()
+        except:
+            id = hashlib.sha1(str(sorted([ str(id_dict[key]) for key in id_dict.keys() ])).encode('utf-8')).hexdigest()
+            
         return id
         
     def _save(self,res):
@@ -405,26 +418,28 @@ class Run(object):
         """
         
         serialized = '__unhashable__'
-          
+        
         nametypes = [
             types.BuiltinFunctionType,
             types.BuiltinMethodType,
-            types.ClassType,
             types.FunctionType,
             types.GeneratorType,
-            types.InstanceType,
             types.LambdaType,
             types.MethodType,
-            types.ModuleType,
-            types.TypeType,
-            types.UnboundMethodType
+            types.ModuleType
         ]
-        
+        try:
+            nametypes.append(types.ClassType)
+            nametypes.append(InstanceType)
+            nametypes.append(TypeType)
+            nametypes.append(UnboundMethodType)
+        except:
+            nametypes.append(type)
+
+            
         
         if isinstance(val,types.CodeType):
             serialized = val.co_code
-        elif isinstance(val,types.FileType):
-            serialized = val.name
         else:
             for t in nametypes:
                 if isinstance(val,t):
