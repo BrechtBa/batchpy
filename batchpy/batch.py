@@ -129,7 +129,9 @@ class Batch(object):
         for k, v in parameters.items():
             if type(v) == str:
                 parameters[k] = [v]
-
+            elif not hasattr(v, '__len__'):
+                parameters[k] = [v]
+                
         valslist = list(itertools.product(*parameters.values()))
         
         for vals in valslist:
