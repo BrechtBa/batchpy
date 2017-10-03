@@ -50,7 +50,6 @@ class TestBatch(unittest.TestCase):
         batch = batchpy.Batch(name='testbatch')
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
         
-        found = [False,]
         runs = [
             {'par':{'A':1,'B':[1,2],'C':np.mean}, 'found': False},
             {'par':{'A':1,'B':[3,4],'C':np.mean}, 'found': False},
@@ -67,7 +66,29 @@ class TestBatch(unittest.TestCase):
                     
         for r in runs:
             self.assertTrue(r['found'])
-
+            
+    def test_add_factorial_runs_string(self):
+    
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]],'C':'test'})
+        
+        found = [False,]
+        runs = [
+            {'par':{'A':1,'B':[1,2],'C':'test'}, 'found': False},
+            {'par':{'A':1,'B':[3,4],'C':'test'}, 'found': False},
+            {'par':{'A':2,'B':[1,2],'C':'test'}, 'found': False},
+            {'par':{'A':2,'B':[3,4],'C':'test'}, 'found': False},
+            {'par':{'A':3,'B':[1,2],'C':'test'}, 'found': False},
+            {'par':{'A':3,'B':[3,4],'C':'test'}, 'found': False},
+        ]
+        for r in runs:
+            for run in batch.run:
+                if run.parameters == r['par']:
+                    r['found'] = True
+                    break
+                    
+        for r in runs:
+            self.assertTrue(r['found'])
         
     def test_get_runs_with_eq(self):  
         batch = batchpy.Batch(name='testbatch')

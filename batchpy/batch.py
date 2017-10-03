@@ -125,6 +125,11 @@ class Batch(object):
         
         """
         
+        # replace strings with a list with a single element
+        for k, v in parameters.items():
+            if type(v) == str:
+                parameters[k] = [v]
+
         valslist = list(itertools.product(*parameters.values()))
         
         for vals in valslist:
