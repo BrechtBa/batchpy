@@ -20,93 +20,94 @@
 
 import batchpy
 
+# clear the results folder
+batchpy.clear_res()
+
+
 # define a run class
-class example_run(batchpy.Run):
+class ExampleRun(batchpy.Run):
     """
     An example run class
     """
-    def run(self,A=0,B=[1,2,3],operator=max):
+
+    def run(self, A=0, B=[1, 2, 3], operator=max):
         """
         An example computation function
         
         """
-        
-        print(self.parameters)
+        res = {'val': self.parameters['A'] * self.parameters['operator'](self.parameters['B'])}
 
-        res = {'val': self.parameters['A']*self.parameters['operator'](self.parameters['B'])}
-        
         return res
-        
+
+
 # define a batch
 batch = batchpy.Batch('example')
 
-
 # Add single run
-batch.add_run( example_run,{'A':10,'B':[3,2,4,3,8]})
+batch.add_run(ExampleRun, {'A': 10, 'B': [3, 2, 4, 3, 8]})
 
 # Add a full factorial design of runs
-batch.add_factorial_runs( example_run,
-                         {'A': [1,2,3,4,5],
-                          'B': [[2,5,8],[1,9,6,3,9],[6,4,0,9,4,1]],
-                          'operator': [min,max,sum,len]})
-                          
+batch.add_factorial_runs(ExampleRun,
+                         {'A': [1, 2, 3, 4, 5],
+                          'B': [[2, 5, 8], [1, 9, 6, 3, 9], [6, 4, 0, 9, 4, 1]],
+                          'operator': [min, max, sum, len]})
+
 # run properties
-print( batch.run[0].parameters )
-print( batch.run[0].id )
-print( batch.run[0].index )
-print( batch.run[0].done )
-print( batch.run[0].result )
-print( batch.run[0].runtime )
+print(batch.run[0].parameters)
+print(batch.run[0].id)
+print(batch.run[0].index)
+print(batch.run[0].done)
+print(batch.run[0].result)
+print(batch.run[0].runtime)
 
 # run filename
-print( batch.run[0].filename )
+print(batch.run[0].filename)
 
 # get runs with
-runs = batch.get_runs_with(A__ge=3,B=[2,5,8],operator=max)
+runs = batch.get_runs_with(A__ge=3, B=[2, 5, 8], operator=max)
 print(runs)
 
-#run the batch
+# run the batch
 batch()
 
 # retrieve results
 res = batch.run[0].result
 print(res)
 
-runs = batch.get_runs_with(A__le=3,B=[2,5,8],operator=min)
+runs = batch.get_runs_with(A__le=3, B=[2, 5, 8], operator=min)
 res = [run.result['val'] for run in runs]
 print(res)
 
 # add new run
-batch.add_run( example_run,{'A':8,'operator':min})
+batch.add_run(ExampleRun, {'A': 8, 'operator': min})
 print([run.done for run in batch.run])
 batch()
-    
-    
+
 # use of the resultrun class    
 # create a resultbatch    
 ids = [run.id for run in batch.run]
 
-del example_run
+del ExampleRun
 del batch
 
 resultbatch = batchpy.Batch('example')
-resultbatch.add_resultrun( ids )
+resultbatch.add_resultrun(ids)
 
 # retrieve results from the resultbatch
 res = resultbatch.run[0].result
 print(res)
 
-
-# create result batch from id file    
+# create result batch from id file
 resultbatch.save_ids()
 del resultbatch
-    
+
 import numpy as np
+
 ids = np.load('_res/example_ids.npy')
 print(ids)
 
 resultbatch = batchpy.Batch('example')
-resultbatch.add_resultrun( ids )
+resultbatch.add_resultrun(ids)
 
 res = resultbatch.run[0].result
 print(res)
