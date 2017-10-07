@@ -83,34 +83,25 @@ class Run(object):
         self._saveresult = saveresult
         self._result = None
 
-        
         # get the parameters from the run function
         self._resultonly = False
         self._parameters = {}
         
         try:
             a = inspect.signature(self.run)
-            
-            for n,p in a.parameters.items():
+            for n, p in a.parameters.items():
                 self._parameters[p.name] = p.default
-        
         except:
             a = inspect.getargspec(self.run)
-
-            for key,val in zip(a.args[-len(a.defaults):],a.defaults):
+            for key, val in zip(a.args[-len(a.defaults):], a.defaults):
                 self._parameters[key] = val
         
-        for key,val in parameters.items():
+        for key, val in parameters.items():
             self._parameters[key] = val
-        
-        
-        # create the run id
+
         self._id = self.generate_id(self._parameters)
-             
-        # check if there is a result saved
         self._check_result()
 
-        
     def run(self):
         """
         Perform calculations and return the result
@@ -138,10 +129,14 @@ class Run(object):
         ...
         
         """
-
         return {}
     
-    
+    def _run(self):
+        t_start = time.time()
+        res = self.run(**self.parameters)
+        t_end = time.time()
+        return res, t_end-t_start
+
     def __call__(self):
         """
         Checks if the run results are already computed and compute them if not.
@@ -172,24 +167,16 @@ class Run(object):
         {'val': 10}
         
         """
-        
         if not self._done:
-            t_start = time.time()
-            
-            res = self.run(**self.parameters)
-            
-            t_end = time.time()
-            self._runtime = t_end-t_start
-            
+            res, runtime = self._run()
+            self._runtime = runtime
             if self._saveresult:
                 self._save(res)
             else:
                 self._result = res
-            
             self._done = True
         else:
             res = self.load()
-
         return res
     
     
@@ -215,22 +202,17 @@ class Run(object):
         
         if self._saveresult:
             data = self._load()
-            
             if not data is None:
                 res = data['res']
-                
                 # if statement for compatibility with older saved runs
                 if 'runtime' in data:
                     self._runtime = data['runtime']
-                
                 if not 'parameters' in data:
-                    print('The loaded data is in the old style, to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
-                
+                    print('The loaded data is in the old style,'
+                          + 'to add functionality run \'batchpy.convert_run_to_newstyle(run)\'')
                 return res
-                
             else:
                 return None
-                
         else:
             return self._result
             

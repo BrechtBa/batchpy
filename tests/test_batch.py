@@ -123,8 +123,7 @@ class TestBatch(unittest.TestCase):
                 self.assertIn(run,runs)
             else:
                 self.assertNotIn(run,runs)
-        
-        
+
     def test_get_runs_with_ne(self):  
         batch = batchpy.Batch(name='testbatch')
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
@@ -135,8 +134,7 @@ class TestBatch(unittest.TestCase):
                 self.assertNotIn(run,runs)
             else:
                 self.assertIn(run,runs)
-        
-        
+
     def test_get_runs_with_ge_eq(self):  
         batch = batchpy.Batch(name='testbatch')
         batch.add_factorial_runs(testclass,{'A':[1,2,3],'B':[[1,2],[3,4]]})
@@ -149,9 +147,7 @@ class TestBatch(unittest.TestCase):
                 self.assertNotIn(run,runs)
         
     def test_run(self):
-    
         clear_res()
-        
         batch = batchpy.Batch(name='testbatch',saveresult=False)
         batch.add_run(testclass,{'A':10})
         batch.add_run(testclass,{'A':20})
@@ -162,8 +158,21 @@ class TestBatch(unittest.TestCase):
         
         res = batch.run[1].result
         self.assertEqual(res,{'a':list(range(20)),'b':[],'c':np.mean(list(range(20)))})
-        
-        
+
+    def test_run_async(self):
+        clear_res()
+        batch = batchpy.Batch(name='testbatch', saveresult=False, processes=4)
+        batch.add_run(testclass, {'A': 10})
+        batch.add_run(testclass, {'A': 20})
+        batch(verbose=0)
+
+        res = batch.run[0].result
+        self.assertEqual(res, {'a': list(range(10)), 'b': [], 'c': np.mean(list(range(10)))})
+
+        res = batch.run[1].result
+        self.assertEqual(res, {'a': list(range(20)), 'b': [], 'c': np.mean(list(range(20)))})
+
+
     def test_run_save(self):
         
         clear_res()
@@ -172,8 +181,7 @@ class TestBatch(unittest.TestCase):
         batch.add_run(testclass,{'A':1000})
         batch.add_run(testclass,{'A':2000})
         batch(verbose=0)
-    
-    
+
     def test_run_rerun(self):
         
         clear_res()
@@ -193,8 +201,7 @@ class TestBatch(unittest.TestCase):
         end2 = time.time()
         
         self.assertTrue( (end1-start1) > (end2-start2) )
-    
-    
+
     def test_run_save_load(self):
     
         clear_res()
@@ -214,8 +221,7 @@ class TestBatch(unittest.TestCase):
         
         res = batch.run[1].result
         self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':np.mean(list(range(2000)))})
-        
-        
+
     def test_add_resultrun(self):
     
         clear_res()
@@ -236,8 +242,7 @@ class TestBatch(unittest.TestCase):
         
         res = batch.run[1].result
         self.assertEqual(res,{'a':list(range(2000)),'b':[],'c':np.mean(list(range(2000)))})
-        
-        
+
     def test_add_resultrun_function(self):
     
         clear_res()

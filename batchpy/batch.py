@@ -23,6 +23,7 @@ import re
 import numpy as np
 import itertools
 import time
+from multiprocessing import Pool
 
 from . import run
 
@@ -38,36 +39,37 @@ class Batch(object):
     When the result of a run is saved it is cleared from memory which allows for
     computations which would require more memory then available if all runs were
     to be executed at once.
-    
-    Parameters
-    ----------
-    name : string
-        A name for the batch
-        
-    path : string, optional
-        A optional path to store results, if not provided the current path is
-        chosen.
-        
-    saveresult : boolean, optional
-        Save the results to disk or not, this argument is passed to all runs.
-            
-    Examples
-    --------
-    >>> batch = batchpy.Batch('mybatch')
-        
+
     """
     
-    def __init__(self,name,path='',saveresult=True):
+    def __init__(self, name, path='', saveresult=True, processes=1):
         """
-        Creates a batch
-        
-        See above
-        
+        Creates a batch.
+
+        Parameters
+        ----------
+        name : string
+            A name for the batch
+
+        path : string, optional
+            A optional path to store results, if not provided the current path is
+            chosen.
+
+        saveresult : boolean, optional
+            Save the results to disk or not, this argument is passed to all runs.
+
+        processes : int, optional
+            Number of multiprocessing processes to run the batch.
+
+        Examples
+        --------
+        >>> batch = batchpy.Batch('mybatch')
+
         """
-        
         self.name = name
         self.path = path
-        
+        self.processes = processes
+
         self.run = []
         self._saveresult = saveresult
         
@@ -247,7 +249,7 @@ class Batch(object):
         return runs
         
         
-    def __call__(self,runs=-1,verbose=1):
+    def __call__(self, runs=-1, verbose=1):
         """
         Runs the remainder of the batch or a specified run
         
@@ -261,12 +263,10 @@ class Batch(object):
             
         """
         
-        title_width = 80
-        
         # check which runs are to be done
         expandedruns = []
         
-        if isinstance(runs,list) or isinstance(runs,np.ndarray):
+        if isinstance(runs, list) or isinstance(runs, np.ndarray):
             for ind in runs:
                 if not self.run[ind].done:
                     expandedruns.append(ind)
@@ -278,42 +278,32 @@ class Batch(object):
                         
             elif not self.run[runs].done:
                 expandedruns.append(runs)
-    
-        # determine when to print the title string
-        if verbose > 1:
-            skip = 1
-        elif verbose > 0:
-            skip = int( np.ceil( len(expandedruns)/50. ) )
-            
-        starttime = time.time()
-        for i,run in enumerate(expandedruns):
-        
+
+        def success_callback(result):
+            i = result['i']
+            run_inds = result['run_inds']
+            self.run[run_inds[i]]._done = True
+            self.run[run_inds[i]]._runtime = result['runtime']
+            if not self.run[run_inds[i]]._saveresult:
+                self.run[run_inds[i]]._result = result['res']
             if verbose > 0:
-                # print the run title string
-                if i%skip==0:
-                    runtime = time.time()-starttime
-                    if i==0:
-                        etastr = '/'
-                    else:
-                        etastr = '{0:.1f} min'.format( runtime/i*(len(expandedruns)-i)/60 )
-                        
-                    title_str = '### run {0} in '.format(run)
-                    title_str += strlist(expandedruns)
-                    title_str += (40-len(title_str))*' '
-                    title_str += 'runtime: {0:.1f} min'.format(runtime/60)
-                    title_str += 4*' '
-                    title_str += 'eta: '+etastr
-                    title_str += (title_width-len(title_str)-3)*' ' +'###'
-                    
+                print_progress(i, run_inds, starttime, self.run, async=True, verbose=verbose)
 
-                    print(title_str)
-                
-                    # flush the printing cue
-                    sys.stdout.flush()
+        if self.processes > 1:
+            starttime = time.time()
+            with Pool(processes=self.processes) as pool:
+                for i in range(len(expandedruns)):
+                    pool.apply_async(run_async, args=(i, expandedruns, starttime, self.run, ), callback=success_callback)
 
-            # run the run
-            self.run[run]()
-        
+                pool.close()
+                pool.join()
+        else:
+            starttime = time.time()
+            for i in range(len(expandedruns)):
+                if verbose > 0:
+                    print_progress(i, expandedruns, starttime, self.run, async=False, verbose=verbose)
+                self.run[expandedruns[i]]()
+
         runtime = time.time()-starttime
         
         if verbose > 0:
@@ -360,7 +350,7 @@ class Batch(object):
         
         
         if format == 'npy':
-            np.save(filename,[run.id for run in self.run])
+            np.save(filename, [run.id for run in self.run])
             
         elif format == 'py':
             with open(filename,'w') as f:
@@ -405,11 +395,74 @@ class Batch(object):
             filenames.append( os.path.join(dirname , f) )
                 
         return filenames
-    
-    
+
+
 # helper functions
 def strlist(runs):
+    """
+    Returns a pretty formatted string list with dots if there are too many
+    elements.
+    """
     if len(runs) > 5:
         return '[' + str(runs[0]) + ',' + str(runs[1]) + ',...,' + str(runs[-2]) + ',' + str(runs[-1]) +']'
     else:
         return str(runs)
+
+
+def print_progress(i, run_inds, starttime, runs, async=False, width=80, verbose=2):
+    """
+    Prints the progress of a set of runs
+    """
+    if async:
+        skipindex = len([1 for i in run_inds if runs[i].done])
+    else:
+        skipindex = i
+
+    if verbose > 1:
+        skip = 1
+    elif verbose > 0:
+        skip = int(np.ceil(len(run_inds)/50.))
+    else:
+        skip = 1
+
+    if skipindex%skip == 0:
+        runtime = time.time()-starttime
+        if runtime > 60:
+            runtime_str = '{0:.1f} h'.format(runtime/3600)
+        else:
+            runtime_str = '{0:.1f} min'.format(runtime/60)
+
+        if i == 0:
+            eta_str = '/'
+        else:
+            if async:
+                n_done = len([1 for i in run_inds if runs[i].done])
+                n_total = len(run_inds)
+            else:
+                n_done = i
+                n_total = len(run_inds)
+            eta = runtime/n_done*(n_total-n_done)
+            if runtime > 60:
+                eta_str = '{0:.1f} h'.format(eta/3600)
+            else:
+                eta_str = '{0:.1f} min'.format(eta/60)
+
+        progress_str = '### '
+        if async:
+            progress_str += 'finished '
+        progress_str += 'run {0} in '.format(run_inds[i])
+
+        progress_str += strlist(run_inds)
+        progress_str += (40-len(progress_str))*' '
+        progress_str += 'runtime: {}'.format(runtime_str)
+        progress_str += 4*' '
+        progress_str += 'eta: {}'.format(eta_str)
+        progress_str += (width-len(progress_str)-3)*' ' + '###'
+
+        print(progress_str)
+        sys.stdout.flush()
+
+
+def run_async(i, run_inds, starttime, runs):
+    res, runtime = runs[run_inds[i]]._run()
+    return {'res': res, 'runtime': runtime, 'run_inds': run_inds, 'i': i, 'starttime': starttime}

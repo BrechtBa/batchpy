@@ -4,5 +4,6 @@ build
 dist
 env
 _res
+.idea
 *.zip
 
