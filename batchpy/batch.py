@@ -43,7 +43,7 @@ class Batch(object):
 
     """
 
-    def __init__(self, name, path='', saveresult=True, processes=1):
+    def __init__(self, name, path='', saveresult=True):
         """
         Creates a batch.
 
@@ -59,9 +59,6 @@ class Batch(object):
         saveresult : boolean, optional
             Save the results to disk or not, this argument is passed to all runs.
 
-        processes : int, optional
-            Number of multiprocessing processes to run the batch.
-
         Examples
         --------
         >>> batch = batchpy.Batch('mybatch')
@@ -69,7 +66,6 @@ class Batch(object):
         """
         self.name = name
         self.path = path
-        self.processes = processes
 
         self.run = []
         self._saveresult = saveresult
@@ -243,7 +239,7 @@ class Batch(object):
 
         return runs
 
-    def __call__(self, runs=-1, verbose=1):
+    def __call__(self, runs=-1, verbose=1, processes=1):
         """
         Runs the remainder of the batch or a specified run
 
@@ -254,6 +250,9 @@ class Batch(object):
 
         verbose : int, optional
             Integer determining the amount of printed output 0/1/2
+
+        processes : int, optional
+            Number of multiprocessing processes to run the batch.
 
         """
 
@@ -285,9 +284,9 @@ class Batch(object):
             if verbose > 0:
                 print_progress(i, run_inds, starttime, self.run, async=True, verbose=verbose)
 
-        if self.processes > 1:
+        if processes > 1:
             starttime = time.time()
-            with Pool(processes=self.processes) as pool:
+            with Pool(processes=processes) as pool:
                 for i in range(len(expandedruns)):
                     pool.apply_async(run_async, args=(i, expandedruns, starttime, self.run,), callback=success_callback)
 
@@ -433,7 +432,7 @@ def print_progress(i, run_inds, starttime, runs, async=False, width=80, verbose=
                 n_done = i
                 n_total = len(run_inds)
             eta = runtime / n_done * (n_total - n_done)
-            if runtime > 60:
+            if runtime > 3600:
                 eta_str = '{0:.1f} h'.format(eta / 3600)
             else:
                 eta_str = '{0:.1f} min'.format(eta / 60)
