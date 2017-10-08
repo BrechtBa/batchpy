@@ -416,7 +416,7 @@ def print_progress(i, run_inds, starttime, runs, async=False, width=80, verbose=
 
     if skipindex % skip == 0:
         runtime = time.time() - starttime
-        if runtime > 60:
+        if runtime > 3600:
             runtime_str = '{0:.1f} h'.format(runtime / 3600)
         else:
             runtime_str = '{0:.1f} min'.format(runtime / 60)
