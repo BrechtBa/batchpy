@@ -150,10 +150,10 @@ class TestBatch(unittest.TestCase):
 
     def test_run_async(self):
         clear_res()
-        batch = batchpy.Batch(name='testbatch', saveresult=False, processes=4)
+        batch = batchpy.Batch(name='testbatch', saveresult=False)
         batch.add_run(MyRun, {'A': 10})
         batch.add_run(MyRun, {'A': 20})
-        batch(verbose=0)
+        batch(verbose=0, processes=4)
 
         res = batch.run[0].result
         self.assertEqual(res, {'a': list(range(10)), 'b': [], 'c': np.mean(list(range(10)))})
@@ -206,10 +206,10 @@ class TestBatch(unittest.TestCase):
 
     def test_run_save_load_async(self):
         clear_res()
-        batch = batchpy.Batch(name='testbatch', processes=4)
+        batch = batchpy.Batch(name='testbatch')
         batch.add_run(MyRun, {'A': 1000})
         batch.add_run(MyRun, {'A': 2000})
-        batch(verbose=0)
+        batch(verbose=0, processes=4)
 
         # delete and recreate the batch
         batch = batchpy.Batch(name='testbatch')

@@ -5,7 +5,7 @@ import numpy as np
 
 
 class MyRun(batchpy.Run):
-    def run(self, A=1000, B=None, C=np.mean):
+    def run(self, A=1000, B=None, C=np.mean, _D=True):
         if B is None:
             B = []
         a = []

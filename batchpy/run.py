@@ -85,15 +85,21 @@ class Run(object):
         # get the parameters from the run function
         self._resultonly = False
         self._parameters = {}
-
+        self._private_parameters = {}
         try:
             a = inspect.signature(self.run)
             for n, p in a.parameters.items():
-                self._parameters[p.name] = p.default
+                if p.name.startswith('_'):
+                    self._private_parameters[p.name] = p.default
+                else:
+                    self._parameters[p.name] = p.default
         except:
             a = inspect.getargspec(self.run)
             for key, val in zip(a.args[-len(a.defaults):], a.defaults):
-                self._parameters[key] = val
+                if key.startswith('_'):
+                    self._private_parameters[key] = val
+                else:
+                    self._parameters[key] = val
 
         for key, val in parameters.items():
             self._parameters[key] = val
@@ -132,7 +138,7 @@ class Run(object):
 
     def _run(self):
         t_start = time.time()
-        res = self.run(**self.parameters)
+        res = self.run(**self.parameters, **self._private_parameters)
         t_end = time.time()
         return res, t_end - t_start
 
