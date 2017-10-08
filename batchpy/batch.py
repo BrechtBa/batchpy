@@ -278,7 +278,9 @@ class Batch(object):
             run_inds = result['run_inds']
             self.run[run_inds[i]]._done = True
             self.run[run_inds[i]]._runtime = result['runtime']
-            if not self.run[run_inds[i]]._saveresult:
+            if self.run[run_inds[i]]._saveresult:
+                self.run[run_inds[i]]._save(result['res'])
+            else:
                 self.run[run_inds[i]]._result = result['res']
             if verbose > 0:
                 print_progress(i, run_inds, starttime, self.run, async=True, verbose=verbose)
