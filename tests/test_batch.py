@@ -272,6 +272,23 @@ class TestBatch(unittest.TestCase):
         res = batch.run[1].result
         self.assertEqual(res, {'a': list(range(2000)), 'b': [], 'c': rms1})
 
+    def test_add_resultrun_folder(self):
+        clear_res()
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(MyRun, {'A': 1000})
+        batch.add_run(MyRun, {'A': 2000})
+        batch(verbose=0)
+
+        # delete and recreate the batch
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_resultrun_folder()
+
+        res = batch.run[0].result
+        self.assertEqual(res, {'a': list(range(1000)), 'b': [], 'c': np.mean(list(range(1000)))})
+
+        res = batch.run[1].result
+        self.assertEqual(res, {'a': list(range(2000)), 'b': [], 'c': np.mean(list(range(2000)))})
+
     def test_get_runs_with_resultrun(self):
         clear_res()
         batch = batchpy.Batch(name='testbatch')

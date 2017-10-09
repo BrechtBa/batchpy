@@ -156,6 +156,29 @@ class Batch(object):
             r = ResultRun(self, idi)
             self.run.append(r)
 
+    def add_resultrun_folder(self, folder=None):
+        """
+        Adds all runs saved in a directory
+
+        Parameters
+        ----------
+        folder : string, optional
+            The directory where the results reside
+
+        Examples
+        --------
+        >>> batch.add_resultrun_dir()
+
+        """
+        if folder is None:
+            folder = self.savepath
+        files = [f for f in os.listdir(folder) if re.match(self.name + r'_.*\.npy', f)]
+        ids = []
+        for f in files:
+            id = os.path.splitext(os.path.basename(f))[0].split(self.name+'_')[1]
+            ids.append(id)
+        self.add_resultrun(ids)
+
     def get_runs_with(self, **kwargs):
         """
         Returns a list of runs with the specified parameter values
@@ -373,16 +396,16 @@ class Batch(object):
 
         return dirname
 
-    def _get_filenames(self):
+    def _get_filenames(self, folder=None):
         """
         Returns a list of found files which correspond to the batch
         """
-
-        dirname = self.savepath
+        if folder is None:
+            folder = self.savepath
         filenames = []
-        files = [f for f in os.listdir(dirname) if re.match(self.name + r'_run.*\.npy', f)]
+        files = [f for f in os.listdir(folder) if re.match(self.name + r'_.*\.npy', f)]
         for f in files:
-            filenames.append(os.path.join(dirname, f))
+            filenames.append(os.path.join(folder, f))
 
         return filenames
 
