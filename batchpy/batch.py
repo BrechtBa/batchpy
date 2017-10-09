@@ -396,19 +396,6 @@ class Batch(object):
 
         return dirname
 
-    def _get_filenames(self, folder=None):
-        """
-        Returns a list of found files which correspond to the batch
-        """
-        if folder is None:
-            folder = self.savepath
-        filenames = []
-        files = [f for f in os.listdir(folder) if re.match(self.name + r'_.*\.npy', f)]
-        for f in files:
-            filenames.append(os.path.join(folder, f))
-
-        return filenames
-
 
 # helper functions
 def strlist(runs):
