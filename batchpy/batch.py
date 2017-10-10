@@ -442,7 +442,7 @@ def print_progress(i, run_inds, starttime, runs, async=False, width=80, verbose=
                 n_done = i
                 n_total = len(run_inds)
             eta = runtime / n_done * (n_total - n_done)
-            if runtime > 3600:
+            if eta > 3600:
                 eta_str = '{0:.1f} h'.format(eta / 3600)
             else:
                 eta_str = '{0:.1f} min'.format(eta / 60)
