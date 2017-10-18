@@ -28,7 +28,15 @@ class TestBatch(unittest.TestCase):
 
         self.assertEqual(batch.run[0].parameters, {'A': 1, 'B': None, 'C': np.mean})
         self.assertEqual(batch.run[1].parameters, {'A': 2, 'B': None, 'C': np.mean})
+        
+    def test_add_runs_private_parameter(self):
+        batch = batchpy.Batch(name='testbatch')
+        batch.add_run(MyRun, {'A': 1, '_D': False})
+        batch.add_run(MyRun, {'A': 2})
 
+        self.assertEqual(batch.run[0].parameters, {'A': 1, 'B': None, 'C': np.mean})
+        self.assertEqual(batch.run[1].parameters, {'A': 2, 'B': None, 'C': np.mean})
+        
     def test_add_runs_index(self):
         batch = batchpy.Batch(name='testbatch')
         batch.add_run(MyRun, {'A': 1})

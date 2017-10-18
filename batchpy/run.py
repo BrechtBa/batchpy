@@ -102,7 +102,10 @@ class Run(object):
                     self._parameters[key] = val
 
         for key, val in parameters.items():
-            self._parameters[key] = val
+            if key.startswith('_'):
+                self._private_parameters[key] = val
+            else:
+                self._parameters[key] = val
 
         self._id = self.generate_id(self._parameters)
         self._check_result()
